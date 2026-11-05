@@ -1,0 +1,13 @@
+@page
+@{ Layout = null; }
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HAL · Route Card</title><link rel="stylesheet" href="~/css/site.css" asp-append-version="true">
+<script src="~/js/route-card.js" asp-append-version="true" defer></script></head><body>
+<header class="site-header"><div class="header-inner"><div class="hal-mark" aria-hidden="true">HAL</div><div><h1>Foundry and Forge Division</h1><p>Hindustan Aeronautics Limited <span aria-hidden="true">—</span> Route Card</p></div><span class="header-tag">PRODUCTION RECORD</span></div></header>
+<div class="toolbar" aria-label="Route card actions"><span><b>Route card entry</b><small>Fill in all information, then print.</small></span><button type="button" class="print-button" onclick="window.print()">Print route card</button></div>
+<main class="route-card"><form autocomplete="off">
+@await Html.PartialAsync("_Sheet1")
+@await Html.PartialAsync("_Sheet3")
+</form></main><footer class="app-footer">Hindustan Aeronautics Limited <span>·</span> Foundry and Forge Division</footer></body></html>
