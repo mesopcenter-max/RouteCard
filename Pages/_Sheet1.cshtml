@@ -1,16 +1,13 @@
-<section class="sheet active" aria-labelledby="page1-title">
-      <div class="sheet-banner"><strong>Foundry and Forge Division</strong><span>Hindustan Aeronautics Limited - Route Card</span></div>
-      <div class="sheet-heading"><div><span class="page-label">PAGE 1 OF 2</span><h2 id="page1-title">Route Card</h2></div><div class="card-number"><label for="route-card-no">Route card no.</label><input id="route-card-no" name="routeCardNo"></div></div>
-      <fieldset><legend>Order details</legend><div class="fields four"><label>Order no.<input name="orderNo"></label><label>Qty<input name="qty" type="number" min="0"></label><label>Work order no.<input name="workOrderNo"></label><label>JC qty<input name="jcQty" type="number" min="0"></label></div></fieldset>
-      <fieldset><legend>Part details</legend><div class="fields four"><label>PSL no.<input name="pslNo"></label><label>Part no.<span class="lookup-control"><input name="partNo" id="part-no"><button type="button" id="search-part-button">Search</button></span><small id="part-search-status" role="status" aria-live="polite"></small></label><label class="span-two">Part name<input name="partName"></label><label>HAL drg. no.<input name="halDrawingNo"></label><label>Issue no.<input name="issueNo"></label><label>No. of parts / unit material<input name="partsPerUnit"></label><label>Ref. drg. no.<input name="referenceDrawingNo"></label></div></fieldset>
-      <fieldset><legend>Raw material details</legend><div class="fields four"><label>Specification<input name="materialSpecification"></label><label>Issue<input name="materialIssue"></label><label class="span-two">Description<input name="materialDescription"></label><label>MR no.<input name="mrNo"></label><label>Date<input name="materialDate" type="date"></label><label>Material type<input name="materialType"></label><label>Received condition<input name="receivedCondition"></label><label>Raw material size · dia<input name="rawMaterialDia"></label><label>Raw material size · length<input name="rawMaterialLength"></label><label>Batch no.<input name="rawMaterialBatchNo"></label><label>Alt. material / size<input name="alternativeMaterialSize"></label></div></fieldset>
-      <fieldset><legend>Rubber compound</legend><div class="fields five"><label>Specification<input name="rubberSpecification"></label><label>Date of mix<input name="rubberMixDate" type="date"></label><label>Date of expiry<input name="rubberExpiryDate" type="date"></label><label>Qty<input name="rubberQty" type="number" min="0"></label><label>Supplier<input name="rubberSupplier"></label></div></fieldset>
-      <div class="fields two standalone"><label>TA / PC ref.<input name="taPcRef"></label></div>
-      <div class="process-grid">
-        <fieldset><legend>Forging / ring rolling details</legend><div class="fields two"><label>B.S. wt<input name="bsWeight"></label><label>Forg. wt<input name="forgingWeight"></label><label>Plant<input name="forgingPlant"></label><label>Batch no.<input name="forgingBatchNo"></label><label>Qty<input name="forgingQty" type="number" min="0"></label></div></fieldset>
-        <fieldset><legend>Rubber</legend><div class="fields two"><label>Batch no.<input name="rubberBatchNo"></label><label>LTR no. of rubber compound<input name="rubberLtrNo"></label></div></fieldset>
-        <fieldset><legend>Casting details</legend><div class="fields two"><label>UN FETT<input name="unFett"></label><label>FETT wt<input name="fettWeight"></label><label>Batch no.<input name="castingBatchNo"></label><label>Qty<input name="castingQty" type="number" min="0"></label></div></fieldset>
-        <fieldset><legend>Powder METT details</legend><div class="fields two"><label>PAD. wt<input name="padWeight"></label><label>Plating batch no.<input name="platingBatchNo"></label><label>Mix batch no.<input name="mixBatchNo"></label><label>Qty<input name="powderQty" type="number" min="0"></label></div></fieldset>
-      </div>
-      <div class="divider-section"></div>
-    </section>
+<section class="sheet tab-panel active" id="order-part-panel" role="tabpanel" aria-labelledby="order-part-tab" aria-hidden="false" tabindex="0">
+  <div class="panel-title"><span class="panel-step">01</span><div><h2>Order &amp; Part Details</h2><p>Order quantities and part identification</p></div></div>
+  <div class="detail-grid order-part-grid">
+    <section class="detail-card"><h3>Order Details</h3><div class="detail-body fields four">
+      <label>Order no.<input name="orderNo"></label><label>Qty<input name="qty" type="number" min="0"></label><label>Work order no.<input name="workOrderNo"></label><label>JC qty<input name="jcQty" type="number" min="0"></label>
+    </div></section>
+    <section class="detail-card"><h3>Part Details</h3><div class="detail-body fields four">
+      <label>PSL no.<input name="pslNo"></label>
+      <label>Part no.<span class="lookup-control"><input name="partNo" id="part-no"><button type="button" id="search-part-button">Search</button></span><small id="part-search-status" role="status" aria-live="polite"></small></label>
+      <label class="span-two">Part name<input name="partName"></label><label>HAL drg. no.<input name="halDrawingNo"></label><label>Issue no.<input name="issueNo"></label><label>No. of parts / unit material<input name="partsPerUnit"></label><label>Ref. drg. no.<input name="referenceDrawingNo"></label>
+    </div></section>
+  </div>
+</section>

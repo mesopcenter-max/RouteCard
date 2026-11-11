@@ -1,33 +1,108 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const pages = Array.from(document.querySelectorAll('.sheet'));
-  let currentPage = 0;
+  const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
+  const panels = tabs.map(tab => document.getElementById(tab.getAttribute('aria-controls'))).filter(Boolean);
 
-  function showPage(index) {
-    currentPage = Math.max(0, Math.min(index, pages.length - 1));
-    pages.forEach((page, pageIndex) => {
-      const active = pageIndex === currentPage;
-      page.classList.toggle('active', active);
-      page.setAttribute('aria-hidden', String(!active));
+  function activateTab(tab, moveFocus = false) {
+    tabs.forEach(candidate => {
+      const selected = candidate === tab;
+      candidate.classList.toggle('active', selected);
+      candidate.setAttribute('aria-selected', String(selected));
+      candidate.tabIndex = selected ? 0 : -1;
     });
-    const heading = pages[currentPage].querySelector('h2');
-    if (heading) {
-      heading.setAttribute('tabindex', '-1');
-      heading.focus({ preventScroll: true });
-    }
+    panels.forEach(panel => {
+      const selected = panel.id === tab.getAttribute('aria-controls');
+      panel.classList.toggle('active', selected);
+      panel.setAttribute('aria-hidden', String(!selected));
+    });
+    if (moveFocus) tab.focus();
   }
 
-  // Show all pages by default (single page view)
-  pages.forEach((page) => {
-    page.classList.add('active');
-    page.setAttribute('aria-hidden', 'false');
+  tabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => activateTab(tab));
+    tab.addEventListener('keydown', event => {
+      let nextIndex = index;
+      if (event.key === 'ArrowRight') nextIndex = (index + 1) % tabs.length;
+      else if (event.key === 'ArrowLeft') nextIndex = (index - 1 + tabs.length) % tabs.length;
+      else if (event.key === 'Home') nextIndex = 0;
+      else if (event.key === 'End') nextIndex = tabs.length - 1;
+      else return;
+      event.preventDefault();
+      activateTab(tabs[nextIndex], true);
+    });
   });
+  if (tabs.length) activateTab(tabs[0]);
 
-  // Navigation disabled for single page view
-  document.querySelectorAll('[data-page="next"]').forEach(button => {
-    button.style.display = 'none';
-  });
-  document.querySelectorAll('[data-page="previous"]').forEach(button => {
-    button.style.display = 'none';
+  document.querySelector('#print-route-card')?.addEventListener('click', () => window.print());
+
+  const routeForm = document.querySelector('.route-form');
+  const saveStatus = document.querySelector('#save-route-card-status');
+  const saveButton = document.querySelector('#save-route-card');
+  const cardFieldNames = new Set([
+    'routeCardNo', 'orderNo', 'qty', 'workOrderNo', 'jcQty', 'partNo', 'partName', 'pslNo',
+    'halDrawingNo', 'issueNo', 'partsPerUnit', 'referenceDrawingNo', 'materialSpecification',
+    'materialIssue', 'materialDescription', 'mrNo', 'materialDate', 'materialType', 'receivedCondition',
+    'rawMaterialDia', 'rawMaterialLength', 'rawMaterialBatchNo', 'alternativeMaterialSize',
+    'rubberSpecification', 'rubberMixDate', 'rubberExpiryDate', 'rubberQty', 'rubberSupplier', 'taPcRef',
+    'bsWeight', 'forgingWeight', 'forgingPlant', 'forgingBatchNo', 'forgingQty', 'rubberBatchNo',
+    'rubberLtrNo', 'unFett', 'fettWeight', 'castingBatchNo', 'castingQty', 'padWeight',
+    'platingBatchNo', 'mixBatchNo', 'powderQty'
+  ]);
+
+  function getFieldValue(field) {
+    if (!field.value) return null;
+    return field.type === 'number' ? Number(field.value) : field.value;
+  }
+
+  function getOperationRows() {
+    return Array.from(operationsTable?.tBodies[0].rows || []).map(row => {
+      const operation = {};
+      row.querySelectorAll('[name]').forEach(field => {
+        const match = field.name.match(/^operation(No|Description|DepWcr|AccQty|RejQty|Stamp|Sign)\d+$/);
+        if (match) {
+          const property = match[1][0].toLowerCase() + match[1].slice(1);
+          operation[property] = getFieldValue(field);
+        }
+      });
+      return operation;
+    }).filter(operation => Object.values(operation).some(value => value !== null));
+  }
+
+  routeForm?.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (saveButton) saveButton.disabled = true;
+    if (saveStatus) saveStatus.textContent = 'Saving route card...';
+
+    const card = {};
+    const traceability = [];
+    Array.from(routeForm.elements).forEach(field => {
+      if (!field.name) return;
+      const value = getFieldValue(field);
+      if (cardFieldNames.has(field.name)) {
+        card[field.name] = value;
+      } else if (!/^operation(No|Description|DepWcr|AccQty|RejQty|Stamp|Sign)\d+$/.test(field.name)) {
+        traceability.push({ field: field.name, value });
+      }
+    });
+
+    try {
+      const response = await fetch('/api/route-cards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ card, traceability, operations: getOperationRows() })
+      });
+      let result;
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error(`The server returned HTTP ${response.status}.`);
+      }
+      if (!response.ok) throw new Error(result.detail || result.error || 'The route card could not be saved.');
+      if (saveStatus) saveStatus.textContent = `Route card saved successfully (record ${result.id}).`;
+    } catch (error) {
+      if (saveStatus) saveStatus.textContent = `Save failed: ${error.message}`;
+    } finally {
+      if (saveButton) saveButton.disabled = false;
+    }
   });
 
   function nextRowNumber(tbody, pattern) {
@@ -60,68 +135,37 @@ document.addEventListener('DOMContentLoaded', () => {
     button.className = 'row-delete-button';
     button.textContent = 'Delete';
     button.setAttribute('aria-label', label);
-    button.addEventListener('click', () => {
-      const table = row.closest('table');
-      row.remove();
-      if (table.classList.contains('trace-table')) renumberTraceRows(table);
-    });
+    button.addEventListener('click', () => row.remove());
     cell.append(button);
     row.append(cell);
   }
 
-  function renumberTraceRows(table) {
-    table.querySelectorAll('tbody tr').forEach((row, index) => {
-      row.cells[0].textContent = String(index + 1);
-    });
-  }
-
-  function addActionColumn(table) {
+  const operationsTable = document.querySelector('.operations-table');
+  if (operationsTable) {
     const heading = document.createElement('th');
     heading.className = 'actions-heading';
     heading.setAttribute('aria-label', 'Row actions');
-    table.tHead.rows[0].append(heading);
-    table.tBodies[0].querySelectorAll('tr').forEach((row, index) => {
-      addDeleteButton(row, `Delete row ${index + 1}`);
-    });
+    operationsTable.tHead.rows[0].append(heading);
+    operationsTable.tBodies[0].querySelectorAll('tr').forEach((row, index) => addDeleteButton(row, `Delete row ${index + 1}`));
   }
 
-  const traceTable = document.querySelector('.trace-table');
-  const operationsTable = document.querySelector('.operations-table');
-  if (traceTable) addActionColumn(traceTable);
-  if (operationsTable) addActionColumn(operationsTable);
-
-  document.querySelectorAll('[data-add-row]').forEach(button => {
+  document.querySelectorAll('[data-add-row="operations"]').forEach(button => {
     button.addEventListener('click', () => {
-      const isTrace = button.dataset.addRow === 'traceability';
-      const table = isTrace ? traceTable : operationsTable;
-      if (!table) return;
-      const tbody = table.tBodies[0];
+      if (!operationsTable) return;
+      const tbody = operationsTable.tBodies[0];
       const row = document.createElement('tr');
+      const rowNumber = nextRowNumber(tbody, /^operationNo(\d+)$/);
       const displayNumber = tbody.rows.length + 1;
-
-      if (isTrace) {
-        const rowNumber = nextRowNumber(tbody, /^billetId(\d+)$/);
-        const serial = document.createElement('td');
-        serial.textContent = String(displayNumber);
-        row.append(serial);
-        addInputCell(row, `billetId${rowNumber}`, `Serial ${displayNumber} billet identification`);
-        addInputCell(row, `billetRemarks${rowNumber}`, `Serial ${displayNumber} remarks`);
-      } else {
-        const rowNumber = nextRowNumber(tbody, /^operationNo(\d+)$/);
-        const fields = [
-          ['operationNo', 'operation number', 'text'],
-          ['operationDescription', 'operation description', 'text'],
-          ['operationDepWcr', 'department or WCR', 'text'],
-          ['operationAccQty', 'accepted quantity', 'number'],
-          ['operationRejQty', 'rejected quantity', 'number'],
-          ['operationStamp', 'stamp', 'text'],
-          ['operationSign', 'signature', 'text']
-        ];
-        fields.forEach(([name, label, type]) => {
-          addInputCell(row, `${name}${rowNumber}`, `Operation ${displayNumber} ${label}`, type);
-        });
-      }
-
+      const fields = [
+        ['operationNo', 'operation number', 'text'],
+        ['operationDescription', 'operation description', 'text'],
+        ['operationDepWcr', 'department or WCR', 'text'],
+        ['operationAccQty', 'accepted quantity', 'number'],
+        ['operationRejQty', 'rejected quantity', 'number'],
+        ['operationStamp', 'stamp', 'text'],
+        ['operationSign', 'signature', 'text']
+      ];
+      fields.forEach(([name, label, type]) => addInputCell(row, `${name}${rowNumber}`, `Operation ${displayNumber} ${label}`, type));
       addDeleteButton(row, `Delete row ${displayNumber}`);
       tbody.append(row);
     });
@@ -199,8 +243,6 @@ document.addEventListener('DOMContentLoaded', () => {
       setField('pslNo', data.pslNo);
       setField('qty', data.qty);
       setField('jcQty', data.jcQty ?? data.qty);
-      setField('traceWorkOrderNo', data.workOrderNo);
-      setField('traceJcQty', data.jcQty ?? data.qty);
       setField('operationPslNo', data.pslNo);
       setField('operationWorkOrderNo', data.workOrderNo);
       setField('operationJcQty', data.jcQty ?? data.qty);
@@ -237,8 +279,6 @@ document.addEventListener('DOMContentLoaded', () => {
       setField('workOrderNo', data.workOrderNo);
       setField('qty', data.qty);
       setField('jcQty', data.jcQty ?? data.qty);
-      setField('traceWorkOrderNo', data.workOrderNo);
-      setField('traceJcQty', data.jcQty ?? data.qty);
       setField('operationPslNo', data.pslNo);
       setField('operationWorkOrderNo', data.workOrderNo);
       setField('operationJcQty', data.jcQty ?? data.qty);
@@ -252,13 +292,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  document.querySelector('#search-order-button')?.addEventListener('click', searchOrder);
-  document.querySelector('[name="orderNo"]')?.addEventListener('keydown', event => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      searchOrder();
-    }
-  });
   document.querySelector('#search-part-button')?.addEventListener('click', searchPart);
   document.querySelector('[name="partNo"]')?.addEventListener('keydown', event => {
     if (event.key === 'Enter') {

@@ -2,12 +2,13 @@ using HALRouteCardApp.Models;
 using HALRouteCardApp.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 
 namespace HALRouteCardApp.Controllers;
 
 [ApiController]
 [Route("api/route-cards")]
-public sealed class RouteCardsController(IRouteCardService routeCards, IOpcenterLookupService opcenter) : ControllerBase
+public sealed class RouteCardsController(IRouteCardService routeCards, IOpcenterLookupService opcenter, ILogger<RouteCardsController> logger) : ControllerBase
 {
     [HttpPost]
     public async Task<ActionResult<RouteCard>> Save([FromBody] RouteCardSaveRequest request, CancellationToken cancellationToken)
@@ -20,6 +21,11 @@ public sealed class RouteCardsController(IRouteCardService routeCards, IOpcenter
         catch (ArgumentException exception)
         {
             return BadRequest(new { error = exception.Message });
+        }
+        catch (DbUpdateException exception)
+        {
+            logger.LogError(exception, "Failed to save route card {PartNo} to the database.", request.Card.PartNo);
+            return Problem("The route card could not be saved to the database.", statusCode: StatusCodes.Status503ServiceUnavailable);
         }
     }
 
