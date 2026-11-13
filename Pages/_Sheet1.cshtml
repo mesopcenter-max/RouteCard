@@ -1,13 +1,28 @@
-<section class="sheet detail-section" aria-label="Order &amp; Part Details">
-  <div class="panel-title"><span class="panel-step">01</span><div><h2>Order &amp; Part Details</h2><p>Order quantities and part identification</p></div></div>
+<section class="sheet detail-section" aria-label="Order, Project &amp; Part Details">
+  <div class="panel-title"><span class="panel-step">01</span><div><h2>Order, Project &amp; Part Details</h2><p>Order quantities, customer details and five part references</p></div></div>
   <div class="detail-grid order-part-grid">
     <section class="detail-card"><h3>Order Details</h3><div class="detail-body fields four">
       <label>Order no.<input name="orderNo"></label><label>Qty<input name="qty" type="number" min="0"></label><label>Work order no.<span class="lookup-control"><input name="workOrderNo" id="work-order-no"><button type="button" id="search-work-order-button">Search</button></span><small id="work-order-search-status" role="status" aria-live="polite"></small></label><label>JC qty<input name="jcQty" type="number" min="0"></label>
     </div></section>
-    <section class="detail-card"><h3>Part Details</h3><div class="detail-body fields four">
-      <label>PSL no.<input name="pslNo"></label>
-      <label>Part no.<span class="lookup-control"><input name="partNo" id="part-no"><button type="button" id="search-part-button">Search</button></span><small id="part-search-status" role="status" aria-live="polite"></small></label>
-      <label class="span-two">Part name<input name="partName"></label><label>Product type<input name="productType"></label><label>HAL drg. no.<input name="halDrawingNo"></label><label>Issue no.<input name="issueNo"></label><label>No. of parts / unit material<input name="partsPerUnit"></label><label class="span-two">Ref. drg. no.<textarea name="referenceDrawingNo" rows="4"></textarea></label>
+    <section class="detail-card"><h3>Project Details</h3><div class="detail-body fields two">
+      <label>Project / Customer<input name="projectCustomer"></label><label>Dept / Product type<input name="deptProductType"></label>
     </div></section>
   </div>
+  <section class="detail-card part-details-card"><h3>Part Details</h3><div class="detail-body">
+    <div class="fields four part-identification">
+      <label>PSL no.<input name="pslNo" aria-label="PSL number"></label>
+      <label>Part no.<span class="lookup-control"><input name="partNo" id="part-no" aria-label="Part number"><button type="button" id="search-part-button">Search</button></span><small id="part-search-status" role="status" aria-live="polite"></small></label>
+      <label>Part name<input name="partName" aria-label="Part name"></label>
+      <label>HAL drg. no.<input name="halDrawingNo" aria-label="HAL drawing number"></label>
+    </div>
+    <div class="table-scroll part-reference-scroll"><table class="entry-table part-details-table"><thead><tr><th>Ref. drg. no.</th><th>ISS</th></tr></thead><tbody>
+      <tr><td><input name="referenceDrawingNo" aria-label="Part row 1 reference drawing number"></td><td><input name="issueNo" aria-label="Part row 1 ISS"></td></tr>
+      <tr><td><input name="part2ReferenceDrawingNo" aria-label="Part row 2 reference drawing number"></td><td><input name="part2IssueNo" aria-label="Part row 2 ISS"></td></tr>
+      <tr><td><input name="part3ReferenceDrawingNo" aria-label="Part row 3 reference drawing number"></td><td><input name="part3IssueNo" aria-label="Part row 3 ISS"></td></tr>
+      <tr><td><input name="part4ReferenceDrawingNo" aria-label="Part row 4 reference drawing number"></td><td><input name="part4IssueNo" aria-label="Part row 4 ISS"></td></tr>
+      <tr><td><input name="part5ReferenceDrawingNo" aria-label="Part row 5 reference drawing number"></td><td><input name="part5IssueNo" aria-label="Part row 5 ISS"></td></tr>
+    </tbody></table></div>
+    <div class="fields four part-classification"><label>Planning Co-ordinate (e-sign)<span class="e-sign-control"><select name="planningCoordinatorStamp" data-card-stamp-select data-approval-key="planningCoordinator" data-approval-name="Planning Co-ordinate" aria-label="Planning Co-ordinate stamp"></select><input name="planningCoordinatorSign" aria-label="Planning Co-ordinate signature" readonly><input name="planningCoordinatorApprovedAt" type="date" aria-label="Planning Co-ordinate approval date"><button type="button" data-card-approve="planningCoordinator">E-sign</button><span class="print-card-stamp" aria-hidden="true"></span></span></label><label>COMPL<input name="compl"></label><label>CLASS<input name="partClass"></label><label>No. of parts / unit material<input name="partsPerUnit"></label></div>
+  </div></section>
+  <div class="detail-card reference-card"><h3>References</h3><div class="detail-body fields two"><label>LTCC reference date<input name="ltccReferenceDate" type="date"></label><label>TA / PC reference<input name="taPcRef"></label><label>TA / PC reference date<input name="taPcRefDate" type="date"></label></div></div>
 </section>

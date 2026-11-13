@@ -21,7 +21,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 .route-card{max-width:1700px;margin:0 auto;padding:0 clamp(18px,3vw,44px) 20px}
 .general-info{overflow:hidden;margin-bottom:12px;border:1px solid #e4e9f0;border-radius:10px;background:#fff;box-shadow:0 2px 8px #13284708}
 .section-bar{margin:0;padding:11px 20px;background:var(--navy);color:#fff;font:700 20px Manrope,Arial,sans-serif}
-.general-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;padding:18px 22px 20px}
+.general-fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;padding:18px 22px 20px}
 .general-fields label,.fields label{display:flex;min-width:0;flex-direction:column;gap:7px;color:#303844;font-size:15px;font-weight:600}
 .field-label{color:#303844;font-size:15px;font-weight:600}
 .static-field{min-height:42px;padding:10px 12px;border:1px solid #e5e8ed;border-radius:6px;background:#f2f3f5;color:#6f7782;font-size:14px;display:flex;align-items:center}
@@ -65,9 +65,6 @@ small{font-size:12px}
 .operations-table th:nth-child(1){width:10%}.operations-table th:nth-child(2){width:27%}.operations-table th:nth-child(3){width:14%}.operations-table th:nth-child(4),.operations-table th:nth-child(5){width:9%}.operations-table th:nth-child(6),.operations-table th:nth-child(7){width:12%}.operations-table td:nth-child(2){vertical-align:top}
 .table-actions{padding-top:13px}
 .add-row-button{min-width:150px;min-height:38px;padding:8px 14px;border:1px solid var(--blue);border-radius:6px;background:var(--blue);color:#fff;font-size:14px;font-weight:700}
-.delete-cell,.actions-heading{width:64px;text-align:center}
-.row-delete-button{padding:5px 8px;border:1px solid #f1b5b5;border-radius:5px;background:#fff;color:#c62828;font-size:10px}
-.row-delete-button{font-size:13px}
 .panel-step{font-size:13px}
 .record-actions{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:12px;padding:14px 16px;border:1px solid #e1e6ed;border-radius:9px;background:#fff;color:var(--muted);font-size:11px}
 .print-button{min-height:42px;padding:10px 20px;border:1px solid var(--green);border-radius:6px;background:var(--green);color:#fff;font:700 13px 'DM Sans',Arial,sans-serif}
@@ -79,48 +76,25 @@ small{font-size:12px}
 .hal-logo{display:block;flex:0 0 124px;width:124px;height:64px;object-fit:cover;object-position:center;background:#fff}
 .print-header-logo{display:none}
 .detail-grid.raw-materials-grid{grid-template-columns:1fr}
-@media(max-width:1000px){.general-fields{gap:12px;padding:16px}.four{grid-template-columns:repeat(2,minmax(0,1fr))}.detail-grid.two-up{grid-template-columns:1fr}.division-copy{display:none}}
-@media(max-width:620px){.header-inner{min-height:68px}.brand-copy h1{font-size:23px}.brand-copy p{font-size:10px}.header-tag{display:none}.breadcrumb{min-height:46px;gap:10px;font-size:12px}.general-fields{grid-template-columns:1fr}.detail-grid{padding:10px}.detail-body{padding:13px}.fields.four,.fields.two{grid-template-columns:1fr}.span-two{grid-column:auto}.record-actions{align-items:stretch;flex-direction:column}.print-button{width:100%}.app-footer{flex-direction:column}.panel-title{padding:12px 14px}}
-@page{size:A4 portrait;margin:16mm 10mm 14mm;@top-center{content:"HINDUSTAN AERONAUTICS LIMITED  |  FOUNDRY AND FORGE DIVISION";font:700 8pt Arial,sans-serif;color:#123456;border-bottom:.5pt solid #1769c2;padding-bottom:3mm;width:100%}@bottom-center{content:"ROUTE CARD  |  Page " counter(page) " of " counter(pages);font:8pt Arial,sans-serif;color:#60758d;border-top:.5pt solid #dce5ef;padding-top:3mm;width:100%}}
-@media print{
-  html,body{background:#fff!important;color:#111!important;font-size:9pt}
-  .site-header,.breadcrumb,.app-footer,.record-actions{display:none!important}.print-header-logo{display:block!important;position:fixed;top:-14mm;left:0;width:28mm;height:14mm;object-fit:cover;object-position:center;background:#fff;z-index:1000}
-  .route-card{max-width:none;margin:0;padding:0}
-  .general-info{margin:0 0 4mm;border:1px solid #cbd2db;box-shadow:none;break-inside:avoid}
-  .section-bar,.panel-title,.detail-card h3{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .general-fields{gap:4mm;padding:4mm}
-  .static-field{min-height:10mm;background:#f2f3f5!important}
-  .route-form{padding:0}
-  .detail-section{min-height:0;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;overflow:visible;break-after:auto;page-break-after:auto}
-  #operations-panel{break-after:auto;page-break-after:auto}
-  .panel-title{padding:3mm 4mm}
-  .panel-step{width:8mm;height:8mm;flex-basis:8mm}
-  .detail-grid{gap:4mm;padding:4mm 0}
-  .detail-grid.two-up{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .detail-card{break-inside:avoid;border-color:#b9c1cb}
-  .detail-card h3{padding:2.5mm 3mm;font-size:9pt}
-  .detail-body{padding:3mm}
-  .fields{gap:3mm 4mm}
-  .fields label,.general-fields label{gap:1mm;font-size:8pt}
-  .fields input,.general-fields input,.static-field{height:8mm;min-height:8mm;padding:1mm 2mm;border-color:#aeb5be;border-radius:2px;font-size:8pt}
-  .lookup-control button,#part-search-status,.lookup-control small{display:none!important}
-  .summary-fields{margin-bottom:3mm;padding-bottom:3mm}
-  .table-scroll{overflow:visible}
-  .entry-table{width:100%;min-width:0;border-collapse:collapse;font-size:7pt}
-  .entry-table thead{display:table-header-group}
-  .entry-table th{padding:2mm 1mm;font-size:7pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .entry-table td{padding:1mm;border-bottom:1px solid #cbd2db}
-  .entry-table input,.entry-table textarea{height:7mm;min-height:7mm;padding:1mm;border:0;border-radius:0;font-size:7pt;background:transparent}
-  .entry-table tr{break-inside:avoid;page-break-inside:avoid}
-  .delete-cell,.actions-heading,.table-actions{display:none!important}
-  .operations-table th:nth-child(1){width:11%}.operations-table th:nth-child(2){width:31%}.operations-table th:nth-child(3){width:15%}.operations-table th:nth-child(4),.operations-table th:nth-child(5){width:10%}.operations-table th:nth-child(6),.operations-table th:nth-child(7){width:11%}
-  .reference-card{margin:0 0 4mm}
-}@media print{.operation-section{display:block;margin-bottom:0;padding:0;border:0;border-radius:0;box-shadow:none;overflow:visible;break-after:auto;page-break-after:auto}.section-bar{font-size:13pt}.general-fields label,.fields label{font-size:9pt}.general-fields input,.fields input,.static-field{font-size:9pt}.entry-table th{font-size:8pt}.entry-table input,.entry-table textarea{font-size:8pt}}
-.operation-card{break-inside:auto}
-@media screen and (min-width:1001px){.detail-grid:not(.two-up):not(.raw-materials-grid):not(.order-part-grid){grid-template-columns:repeat(2,minmax(0,1fr))}}body{font-size:16px}
-.brand-copy p{font-size:12px}.brand-copy h1{font-size:28px}.division-copy{font-size:15px}.division-copy span{font-size:13px}.header-tag{font-size:11px}
-.breadcrumb{font-size:16px}.section-bar{font-size:20px}.general-fields label,.fields label,.field-label{font-size:15px}.static-field{font-size:14px}
-.general-fields input,.fields input{font-size:15px}.panel-title h2{font-size:20px}.panel-title p{font-size:14px}.detail-card h3{font-size:18px}
-.lookup-control button{font-size:13px}.entry-table th{font-size:14px}.entry-table input,.entry-table textarea{font-size:13px}.add-row-button,.print-button{font-size:15px}.row-delete-button{font-size:13px}.record-actions,.app-footer{font-size:12px}small,#part-search-status{font-size:12px}
-@media(max-width:620px){.brand-copy h1{font-size:23px}.brand-copy p{font-size:10px}.general-fields label,.fields label,.field-label{font-size:14px}.entry-table th{font-size:12px}}
-@media print{.operation-section{display:block;margin-bottom:0;padding:0;border:0;border-radius:0;box-shadow:none;overflow:visible;break-after:auto;page-break-after:auto}.section-bar{font-size:13pt}.general-fields label,.fields label{font-size:9pt}.general-fields input,.fields input,.static-field{font-size:9pt}.entry-table th{font-size:8pt}.entry-table input,.entry-table textarea{font-size:8pt}}
+.user-panel{display:flex;align-items:center;gap:9px;margin-left:auto;color:var(--navy);font-size:13px}
+.user-panel img{width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #d5e2f1;background:#e8f0fa}
+.user-panel div{display:flex;flex-direction:column}
+.user-panel span{color:var(--muted);font-size:11px}
+.logout-button{padding:6px 9px;border:1px solid #c8d8e9;border-radius:5px;background:#fff;color:var(--navy);font-size:11px;font-weight:700}
+.approve-operation-button{padding:6px 8px;border:1px solid var(--green);border-radius:5px;background:#fff;color:var(--green);font-size:11px;font-weight:700}
+.operation-approved td{background:#f2fbf3}
+.operations-table th:nth-child(6){width:14%}
+.operations-table th:nth-child(7){width:14%}
+.operations-table th:nth-child(8){width:12%}
+.operations-table th:nth-child(9){width:9%}
+.operations-table select{width:100%;height:35px;padding:6px 7px;border:1px solid #c8cbd0;border-radius:6px;background:#fff;color:var(--ink);font-size:13px}
+.login-page{display:grid;place-items:center;min-height:100vh;background:linear-gradient(135deg,#eef4fb,#f9fbfd)}
+.login-card{width:min(420px,calc(100% - 32px));padding:36px;border:1px solid #dce5ef;border-radius:16px;background:#fff;box-shadow:0 12px 35px #13284718;text-align:center}
+.login-logo{width:110px;height:58px;object-fit:cover}
+.login-kicker{margin:18px 0 3px;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.login-card h1{margin:0;color:var(--navy);font:800 30px Manrope,Arial,sans-serif}
+.login-subtitle{margin:5px 0 25px;color:var(--muted)}
+.login-card form{display:grid;gap:10px;text-align:left}
+.login-card label{display:grid;gap:6px;color:#303844;font-size:13px;font-weight:700}
+.login-card input{height:44px;padding:10px 12px;border:1px solid #c8cbd2;border-radius:6px;color:var(--ink)}
+.login-card button{min-height:44px;margin-top:8px;border:0;border-radius:6px;background:var(--navy);color:#fff;font-weight:700}

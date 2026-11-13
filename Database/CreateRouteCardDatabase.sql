@@ -66,3 +66,44 @@ BEGIN
 	CREATE INDEX IX_RouteCards_WorkOrderNo ON dbo.RouteCards(WorkOrderNo);
 END;
 GO
+
+IF OBJECT_ID(N'dbo.AppUsers', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.AppUsers
+    (
+        Id INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_AppUsers PRIMARY KEY,
+        DisplayName NVARCHAR(100) NOT NULL,
+        Username NVARCHAR(200) NOT NULL CONSTRAINT UQ_AppUsers_Username UNIQUE,
+        PasswordHash NVARCHAR(500) NOT NULL,
+        PhotoUrl NVARCHAR(500) NOT NULL
+    );
+END;
+GO
+
+IF OBJECT_ID(N'dbo.UserStamps', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.UserStamps
+    (
+        Id INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_UserStamps PRIMARY KEY,
+        AppUserId INT NOT NULL CONSTRAINT FK_UserStamps_AppUsers REFERENCES dbo.AppUsers(Id),
+        StampValue NVARCHAR(200) NOT NULL,
+        SignatureValue NVARCHAR(200) NOT NULL
+    );
+END;
+GO
+
+IF OBJECT_ID(N'dbo.RouteCardApprovals', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.RouteCardApprovals
+    (
+        Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_RouteCardApprovals PRIMARY KEY,
+        RouteCardId BIGINT NOT NULL CONSTRAINT FK_RouteCardApprovals_RouteCards REFERENCES dbo.RouteCards(Id),
+        AppUserId INT NOT NULL CONSTRAINT FK_RouteCardApprovals_AppUsers REFERENCES dbo.AppUsers(Id),
+        UserStampId INT NOT NULL CONSTRAINT FK_RouteCardApprovals_UserStamps REFERENCES dbo.UserStamps(Id),
+        OperationNo NVARCHAR(100) NOT NULL,
+        StampValue NVARCHAR(200) NOT NULL,
+        SignatureValue NVARCHAR(200) NOT NULL,
+        ApprovedAt DATETIME2 NOT NULL
+    );
+END;
+GO

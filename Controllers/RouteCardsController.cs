@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using HALRouteCardApp.Models;
 using HALRouteCardApp.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -8,6 +9,7 @@ namespace HALRouteCardApp.Controllers;
 
 [ApiController]
 [Route("api/route-cards")]
+[Microsoft.AspNetCore.Authorization.Authorize]
 public sealed class RouteCardsController(IRouteCardService routeCards, IOpcenterLookupService opcenter, ILogger<RouteCardsController> logger) : ControllerBase
 {
     [HttpPost]
@@ -15,7 +17,9 @@ public sealed class RouteCardsController(IRouteCardService routeCards, IOpcenter
     {
         try
         {
-            var card = await routeCards.SaveAsync(request, cancellationToken);
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+                return Unauthorized();
+            var card = await routeCards.SaveAsync(request, userId, cancellationToken);
             return CreatedAtAction(nameof(Get), new { id = card.Id }, card);
         }
         catch (ArgumentException exception)

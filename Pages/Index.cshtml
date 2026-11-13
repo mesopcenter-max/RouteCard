@@ -10,6 +10,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>HAL OpCenter · Route Card</title>
   <link rel="stylesheet" href="~/css/site.css" asp-append-version="true">
+  <link rel="stylesheet" href="~/css/route-card-template.css" asp-append-version="true">
   <script src="~/js/route-card.js" asp-append-version="true" defer></script>
 </head>
 <body>
@@ -19,6 +20,7 @@
       <img class="hal-logo" src="~/images/hal-logo.png" asp-append-version="true" alt="Hindustan Aeronautics Limited">
       <div class="brand-copy"><p>Hindustan Aeronautics Limited</p><h1>HAL OpCenter</h1></div>
       <div class="division-copy"><strong>Foundry &amp; Forge Division</strong><span>Route Card Management</span></div>
+      <div class="user-panel"><img id="current-user-photo" src="@User.FindFirst("photo")?.Value" alt=""><div><strong>@User.Identity?.Name</strong><span>@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</span></div><form method="post" action="/account/logout"><button type="submit" class="logout-button">Sign out</button></form></div>
       <span class="header-tag">PRODUCTION RECORD</span>
     </div>
   </header>
@@ -27,11 +29,13 @@
   <main class="route-card">
     <form class="route-form" autocomplete="off">
     <section class="general-info" aria-labelledby="general-info-title">
-      <h2 class="section-bar" id="general-info-title">General Information</h2>
+      <h2 class="section-bar" id="general-info-title">Route Card</h2>
       <div class="general-fields">
-        <label>Route Card No.<input id="route-card-no" name="routeCardNo" autocomplete="off"></label>
-        <label>Date of Entry<input name="entryDate" type="date" value="@entryDate"></label>
+        <label>SL No.<input id="route-card-no" name="routeCardNo" autocomplete="off"></label>
+        <label>Issue date<input name="issueDate" type="date" value="@entryDate"></label>
+        <label>Tooling<input name="tooling"></label>
         <div class="division-field"><span class="field-label">Division / Location</span><div class="static-field">Foundry and Forge Division - Hindustan Aeronautics Limited</div></div>
+        <div class="card-e-sign"><span class="field-label">Issue Authority (e-sign)</span><div class="e-sign-control"><select name="issueAuthorityStamp" data-card-stamp-select data-approval-key="issueAuthority" data-approval-name="Issue Authority" aria-label="Issue Authority stamp"></select><input name="issueAuthoritySign" aria-label="Issue Authority signature" readonly><input name="issueAuthorityApprovedAt" type="date" aria-label="Issue Authority approval date"><button type="button" data-card-approve="issueAuthority">E-sign</button><span class="print-card-stamp" aria-hidden="true"></span></div></div>
       </div>
     </section>
 
@@ -39,7 +43,7 @@
       @await Html.PartialAsync("_RawMaterials")
       @await Html.PartialAsync("_CompoundsCasting")
       @await Html.PartialAsync("_Sheet3")
-      <div class="record-actions"><span id="save-route-card-status" role="status" aria-live="polite">Review each section, then save or print.</span><button type="submit" class="print-button" id="save-route-card">Save Route Card</button><button type="button" class="print-button" id="print-route-card">Print / Save as PDF <span aria-hidden="true">▣</span></button></div>
+      <div class="record-actions"><span id="save-route-card-status" role="status" aria-live="polite">Review each section, then save or print.</span><span id="stamp-load-status" role="status" aria-live="polite"></span><button type="submit" class="print-button" id="save-route-card">Save Route Card</button><button type="button" class="print-button" id="print-route-card">Print / Save as PDF <span aria-hidden="true">▣</span></button></div>
     </form>
   </main>
 

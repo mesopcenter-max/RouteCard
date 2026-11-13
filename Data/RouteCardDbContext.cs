@@ -7,6 +7,9 @@ public sealed class RouteCardDbContext(DbContextOptions<RouteCardDbContext> opti
 {
     public DbSet<RouteCard> RouteCards => Set<RouteCard>();
     public DbSet<RouteCardLookupSample> RouteCardLookupSamples => Set<RouteCardLookupSample>();
+    public DbSet<AppUser> AppUsers => Set<AppUser>();
+    public DbSet<UserStamp> UserStamps => Set<UserStamp>();
+    public DbSet<RouteCardApproval> RouteCardApprovals => Set<RouteCardApproval>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -54,5 +57,31 @@ public sealed class RouteCardDbContext(DbContextOptions<RouteCardDbContext> opti
         sample.Property(record => record.ForgingWeight).HasMaxLength(100);
         sample.Property(record => record.ForgingPlant).HasMaxLength(100);
         sample.Property(record => record.ForgingBatchNo).HasMaxLength(100);
+
+        var user = modelBuilder.Entity<AppUser>();
+        user.ToTable("AppUsers");
+        user.HasKey(account => account.Id);
+        user.HasIndex(account => account.Username).IsUnique();
+        user.Property(account => account.Username).HasMaxLength(200).IsRequired();
+        user.Property(account => account.DisplayName).HasMaxLength(100).IsRequired();
+        user.Property(account => account.PasswordHash).HasMaxLength(500).IsRequired();
+        user.Property(account => account.PhotoUrl).HasMaxLength(500).IsRequired();
+
+        var stamp = modelBuilder.Entity<UserStamp>();
+        stamp.ToTable("UserStamps");
+        stamp.HasKey(value => value.Id);
+        stamp.Property(value => value.StampValue).HasMaxLength(200).IsRequired();
+        stamp.Property(value => value.SignatureValue).HasMaxLength(200).IsRequired();
+        stamp.HasOne(value => value.AppUser).WithMany(account => account.Stamps).HasForeignKey(value => value.AppUserId);
+
+        var approval = modelBuilder.Entity<RouteCardApproval>();
+        approval.ToTable("RouteCardApprovals");
+        approval.HasKey(value => value.Id);
+        approval.Property(value => value.OperationNo).HasMaxLength(100).IsRequired();
+        approval.Property(value => value.StampValue).HasMaxLength(200).IsRequired();
+        approval.Property(value => value.SignatureValue).HasMaxLength(200).IsRequired();
+        approval.HasOne(value => value.RouteCard).WithMany().HasForeignKey(value => value.RouteCardId);
+        approval.HasOne(value => value.AppUser).WithMany().HasForeignKey(value => value.AppUserId);
+        approval.HasOne(value => value.UserStamp).WithMany().HasForeignKey(value => value.UserStampId);
     }
 }

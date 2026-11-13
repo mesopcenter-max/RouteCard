@@ -1,0 +1,65 @@
+.general-fields{grid-template-columns:repeat(4,minmax(0,1fr))}
+.order-part-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.detail-card h3{background:#e8eef6;color:#173b63;font-size:16px}
+.card-e-sign{grid-column:span 2;min-width:0}
+.e-sign-control{display:grid;grid-template-columns:repeat(2,minmax(0,1fr)) auto;gap:6px;align-items:center}
+.e-sign-control input,.e-sign-control select{width:100%;min-width:0;height:39px;padding:7px;border:1px solid #c8cbd0;border-radius:6px;background:#fff;color:var(--ink);font:inherit;font-size:13px}
+.e-sign-control button{min-height:39px;padding:6px 9px;border:1px solid var(--green);border-radius:6px;background:#fff;color:var(--green);font-size:12px;font-weight:700}
+.print-card-stamp{display:none}
+.print-approval-stamp,.print-approval-signature,.print-approval-date{display:none}
+.part-details-card{margin:0 14px 14px}
+.part-identification{margin-bottom:16px}
+.part-reference-scroll{max-width:760px}
+.part-details-table{min-width:0}
+.part-details-table th:nth-child(1){width:75%}.part-details-table th:nth-child(2){width:25%}
+.part-details-table td .lookup-control{gap:3px}
+.part-details-table td .lookup-control button{padding:0 6px;font-size:10px}
+.part-classification{margin-top:14px}
+#stamp-load-status{color:#a12626}
+@media(max-width:1000px){.general-fields,.order-part-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.detail-body.fields.four{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.part-identification{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.general-fields,.order-part-grid{grid-template-columns:1fr}.card-e-sign{grid-column:auto}.e-sign-control{grid-template-columns:1fr 1fr}.e-sign-control button{grid-column:span 2}}
+@page{size:A4 landscape;margin:0}
+@media print{
+  html,body{min-height:0;background:#fff!important;color:#1d2733;font-size:9pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .site-header,.user-panel,.breadcrumb,.app-footer,.record-actions{display:none!important}
+  .print-header-logo{display:block!important;position:static;width:32mm;height:15mm;object-fit:contain;margin:0 auto 2mm}
+  .route-card{max-width:none;margin:0;padding:0 8mm 8mm}
+  .route-form{padding:0}
+  .general-info,.detail-section,.operation-section{margin:0 0 4mm;border:1px solid #b8c5d3;border-radius:2mm;background:#fff;box-shadow:none;overflow:visible;break-inside:auto}
+  .section-bar,.panel-title{background:#123d68!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .section-bar{padding:2.5mm 4mm;font-size:13pt}
+  .panel-title{padding:2.5mm 4mm}
+  .panel-title h2{font-size:12pt}
+  .panel-title p{color:#e5edf5;font-size:8pt}
+  .panel-step{width:7mm;height:7mm;flex-basis:7mm}
+  .general-fields{gap:3mm;padding:3mm}
+  .detail-grid{gap:3mm;padding:3mm}
+  .detail-grid.order-part-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .detail-card{border:1px solid #c6d0dc;border-radius:1mm;break-inside:avoid}
+  .detail-card h3{padding:2mm 3mm;background:#e8eef6!important;color:#173b63!important;font-size:9pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .detail-body,.reference-card .detail-body{padding:2.5mm 3mm}
+  .fields{gap:2mm 3mm}
+  .fields label,.general-fields label,.field-label{gap:1mm;font-size:7.5pt}
+  .general-fields input,.fields input,.entry-table input,.static-field{height:7mm;min-height:7mm;padding:1mm 1.5mm;border:1px solid #b8c5d3;border-radius:1mm;font-size:7.5pt}
+  .static-field{background:#f3f6f9!important;color:#27384a}
+  .lookup-control button,#part-search-status,.lookup-control small{display:none!important}
+  .part-details-card{margin:0 0 3mm}
+  .part-identification{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:2mm}
+  .part-reference-scroll{max-width:none}
+  .table-scroll{overflow:visible}
+  .entry-table{width:100%;min-width:0;border-collapse:collapse;font-size:8pt}
+  .entry-table th{padding:1.5mm 2mm;background:#dce7f3!important;color:#173b63!important;font-size:8pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .entry-table td{padding:1mm 1.5mm;border-bottom:1px solid #d5dee8}
+  .entry-table input{height:6.5mm;min-height:6.5mm;padding:1mm;border:0;border-radius:0;background:transparent;font-size:8pt;text-align:left}
+  .entry-table tr{break-inside:avoid;page-break-inside:avoid}
+  .part-classification{margin-top:2mm}
+  .reference-card{margin:0 0 3mm}
+  .card-e-sign{grid-column:span 2}
+  .e-sign-control{display:grid;grid-template-columns:repeat(2,minmax(0,1fr)) auto;gap:2mm}
+  .e-sign-control input{height:8mm;min-height:8mm;padding:1mm 2mm;border-color:#aeb5be;border-radius:2px;font-size:8pt}
+  .e-sign-control select,.e-sign-control button{display:none!important}
+  .e-sign-control .print-card-stamp.has-stamp{display:grid;place-items:center;grid-column:1/-1;width:max-content;max-width:100%;min-width:42mm;min-height:14mm;margin:1mm auto;padding:2mm 7mm;border:2pt double #a12626;border-radius:50%;background:repeating-linear-gradient(165deg,#a1262608 0,#a1262608 .25mm,transparent .25mm,transparent .8mm);box-shadow:inset 0 0 0 .5mm #a126264d;color:#a12626;text-align:center;font-size:7pt;font-weight:800;letter-spacing:.12em;line-height:1.2;text-transform:uppercase;transform:rotate(-2deg);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .operations-table select,.operations-table .approve-operation-button{display:none!important}
+  .operations-table .print-approval-stamp.has-stamp{display:grid;place-items:center;width:100%;min-height:9mm;padding:1mm 2mm;border:1.5pt double #a12626;border-radius:50%;background:repeating-linear-gradient(165deg,#a1262608 0,#a1262608 .2mm,transparent .2mm,transparent .7mm);box-shadow:inset 0 0 0 .4mm #a126264d;color:#a12626;text-align:center;font-size:5.5pt;font-weight:800;letter-spacing:.04em;line-height:1.1;text-transform:uppercase;transform:rotate(-2deg);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}

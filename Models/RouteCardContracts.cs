@@ -49,4 +49,12 @@ public sealed class RouteCardSaveRequest
     public RouteCard Card { get; set; } = new();
     public object[] Traceability { get; set; } = [];
     public object[] Operations { get; set; } = [];
+    public List<RouteCardOperationApprovalRequest> Approvals { get; set; } = [];
+}
+
+public sealed class RouteCardOperationApprovalRequest
+{
+    public string? OperationNo { get; set; }
+    public int StampId { get; set; }
+    public DateTime ApprovedAt { get; set; }
 }
