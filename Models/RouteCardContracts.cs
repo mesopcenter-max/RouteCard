@@ -17,6 +17,7 @@ public sealed class RouteCardLookupResult
     public string? WorkOrderNo { get; set; }
     public decimal? JcQty { get; set; }
     public string? SourceTable { get; set; }
+    public string? OperationsMessage { get; set; }
     public List<string> SourceDatabases { get; set; } = [];
     public List<string> SourceTables { get; set; } = [];
     public Dictionary<string, string?> MatchedFields { get; set; } = new(StringComparer.OrdinalIgnoreCase);

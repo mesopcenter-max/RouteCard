@@ -35,12 +35,6 @@
       </div>
     </section>
 
-    <nav class="detail-tabs" role="tablist" aria-label="Route card details">
-      <button type="button" class="detail-tab active" id="order-part-tab" role="tab" aria-controls="order-part-panel" aria-selected="true" tabindex="0">Order &amp; Part Details</button>
-      <button type="button" class="detail-tab" id="raw-materials-tab" role="tab" aria-controls="raw-materials-panel" aria-selected="false" tabindex="-1">Raw Materials</button>
-      <button type="button" class="detail-tab" id="compounds-tab" role="tab" aria-controls="compounds-panel" aria-selected="false" tabindex="-1">Compounds &amp; Casting</button>
-    </nav>
-
       @await Html.PartialAsync("_Sheet1")
       @await Html.PartialAsync("_RawMaterials")
       @await Html.PartialAsync("_CompoundsCasting")

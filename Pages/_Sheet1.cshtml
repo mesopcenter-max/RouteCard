@@ -1,13 +1,13 @@
-<section class="sheet tab-panel active" id="order-part-panel" role="tabpanel" aria-labelledby="order-part-tab" aria-hidden="false" tabindex="0">
+<section class="sheet detail-section" aria-label="Order &amp; Part Details">
   <div class="panel-title"><span class="panel-step">01</span><div><h2>Order &amp; Part Details</h2><p>Order quantities and part identification</p></div></div>
   <div class="detail-grid order-part-grid">
     <section class="detail-card"><h3>Order Details</h3><div class="detail-body fields four">
-      <label>Order no.<input name="orderNo"></label><label>Qty<input name="qty" type="number" min="0"></label><label>Work order no.<input name="workOrderNo"></label><label>JC qty<input name="jcQty" type="number" min="0"></label>
+      <label>Order no.<input name="orderNo"></label><label>Qty<input name="qty" type="number" min="0"></label><label>Work order no.<span class="lookup-control"><input name="workOrderNo" id="work-order-no"><button type="button" id="search-work-order-button">Search</button></span><small id="work-order-search-status" role="status" aria-live="polite"></small></label><label>JC qty<input name="jcQty" type="number" min="0"></label>
     </div></section>
     <section class="detail-card"><h3>Part Details</h3><div class="detail-body fields four">
       <label>PSL no.<input name="pslNo"></label>
       <label>Part no.<span class="lookup-control"><input name="partNo" id="part-no"><button type="button" id="search-part-button">Search</button></span><small id="part-search-status" role="status" aria-live="polite"></small></label>
-      <label class="span-two">Part name<input name="partName"></label><label>HAL drg. no.<input name="halDrawingNo"></label><label>Issue no.<input name="issueNo"></label><label>No. of parts / unit material<input name="partsPerUnit"></label><label>Ref. drg. no.<input name="referenceDrawingNo"></label>
+      <label class="span-two">Part name<input name="partName"></label><label>Product type<input name="productType"></label><label>HAL drg. no.<input name="halDrawingNo"></label><label>Issue no.<input name="issueNo"></label><label>No. of parts / unit material<input name="partsPerUnit"></label><label class="span-two">Ref. drg. no.<textarea name="referenceDrawingNo" rows="4"></textarea></label>
     </div></section>
   </div>
 </section>

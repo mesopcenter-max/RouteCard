@@ -1,6 +1,9 @@
 using System.Data;
+using HALRouteCardApp.Data;
 using HALRouteCardApp.Models;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace HALRouteCardApp.Services;
 
@@ -9,7 +12,7 @@ public interface IOpcenterLookupService
     Task<RouteCardLookupResult?> FindAsync(RouteCardLookupRequest request, CancellationToken cancellationToken);
 }
 
-public sealed class OpcenterLookupService(IConfiguration configuration) : IOpcenterLookupService
+public sealed class OpcenterLookupService(IConfiguration configuration, RouteCardDbContext db, ILogger<OpcenterLookupService> logger) : IOpcenterLookupService
 {
     private static readonly string[] OrderColumns = ["ORDER_NO", "SHOP_ORDER_NO", "ORDER_NUMBER", "ORDERNUMBER", "LOT_ORDER_NO", "CUSTOMER_ORDER_NO"];
     private static readonly string[] WorkOrderColumns = ["WORK_ORDER_NO", "WORKORDER_NO", "WORK_ORDER", "WORKORDER"];
@@ -39,6 +42,14 @@ public sealed class OpcenterLookupService(IConfiguration configuration) : IOpcen
 
     public async Task<RouteCardLookupResult?> FindAsync(RouteCardLookupRequest request, CancellationToken cancellationToken)
     {
+        var sample = await FindSampleAsync(request, cancellationToken);
+        if (sample is not null)
+        {
+            var sampleResult = ToLookupResult(sample);
+            await ReadSampleOperationsAsync(sample, sampleResult, cancellationToken);
+            return sampleResult;
+        }
+
         var (searchValue, searchColumns, isPartNumber) = GetSearch(request);
         var result = new RouteCardLookupResult();
 
@@ -55,6 +66,67 @@ public sealed class OpcenterLookupService(IConfiguration configuration) : IOpcen
 
         result.PartNo ??= request.PartNo?.Trim();
         return result.Records.Count == 0 && result.Operations.Count == 0 ? null : result;
+    }
+
+    private async Task<RouteCardLookupSample?> FindSampleAsync(RouteCardLookupRequest request, CancellationToken cancellationToken)
+    {
+        var query = db.RouteCardLookupSamples.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(request.WorkOrderNo))
+        {
+            var workOrderNo = request.WorkOrderNo.Trim();
+            return await query.FirstOrDefaultAsync(record => record.WorkOrderNo == workOrderNo, cancellationToken);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.PartNo))
+        {
+            var partNo = new string(request.PartNo.Where(character => !char.IsWhiteSpace(character) && character != '-').ToArray()).ToUpperInvariant();
+            return await query.FirstOrDefaultAsync(record => record.PartNo.ToUpper().Replace("-", "").Replace(" ", "") == partNo, cancellationToken);
+        }
+
+        return null;
+    }
+
+    private static RouteCardLookupResult ToLookupResult(RouteCardLookupSample sample)
+    {
+        var fields = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["ORDER_NO"] = sample.OrderNo,
+            ["WORK_ORDER_NO"] = sample.WorkOrderNo,
+            ["JC_QTY"] = sample.JcQty?.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ["PROJECT"] = sample.Project,
+            ["PRODUCT_TYPE"] = sample.ProductType,
+            ["PSL_NO"] = sample.PslNo,
+            ["PART_NO"] = sample.PartNo,
+            ["PART_NAME"] = sample.PartName,
+            ["HAL_DRG_NO"] = sample.HalDrawingNo,
+            ["REFERENCE_DRAWING_NO"] = sample.ReferenceDrawingNo,
+            ["MATERIAL_SPECIFICATION"] = sample.MaterialSpecification,
+            ["MATERIAL_DESCRIPTION"] = sample.MaterialDescription,
+            ["MR_NO"] = sample.MrNo,
+            ["MATERIAL_DATE"] = sample.MaterialDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
+            ["RAW_MATERIAL_DIA"] = sample.RawMaterialDia,
+            ["RAW_MATERIAL_LENGTH"] = sample.RawMaterialLength,
+            ["RAW_MATERIAL_BATCH_NO"] = sample.RawMaterialBatchNo,
+            ["BS_WEIGHT"] = sample.BsWeight,
+            ["FORGING_WEIGHT"] = sample.ForgingWeight,
+            ["FORGING_PLANT"] = sample.ForgingPlant,
+            ["FORGING_BATCH_NO"] = sample.ForgingBatchNo
+        };
+
+        return new RouteCardLookupResult
+        {
+            PartNo = sample.PartNo,
+            PartName = sample.PartName,
+            PslNo = sample.PslNo,
+            OrderNo = sample.OrderNo,
+            WorkOrderNo = sample.WorkOrderNo,
+            JcQty = sample.JcQty,
+            SourceTable = "dbo.RouteCardLookupSamples",
+            SourceDatabases = ["RouteCard"],
+            SourceTables = ["RouteCard.dbo.RouteCardLookupSamples"],
+            MatchedFields = fields,
+            Records = [new RouteCardLookupRecord { Database = "RouteCard", Table = "dbo.RouteCardLookupSamples", Fields = fields }]
+        };
     }
 
     private static (string Value, string[] Columns, bool IsPartNumber) GetSearch(RouteCardLookupRequest request)
@@ -165,7 +237,34 @@ public sealed class OpcenterLookupService(IConfiguration configuration) : IOpcen
         return rows;
     }
 
-    private async Task ReadOperationsAsync(SqlConnection connection, string databaseName, RouteCardLookupResult result, CancellationToken cancellationToken)
+    private async Task ReadSampleOperationsAsync(RouteCardLookupSample sample, RouteCardLookupResult result, CancellationToken cancellationToken)
+    {
+        const string databaseName = "OpcenterAPSHAL";
+        var connectionString = configuration.GetConnectionString("Opcenter");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            result.OperationsMessage = "Sample details loaded; Opcenter operation lookup is not configured.";
+            logger.LogWarning("Sample route card {PartNo} was loaded, but Opcenter operation lookup is not configured.", sample.PartNo);
+            return;
+        }
+
+        try
+        {
+            await using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync(cancellationToken);
+            await ReadOperationsAsync(connection, databaseName, result, cancellationToken, sample.HalDrawingNo);
+            result.OperationsMessage = result.Operations.Count > 0
+                ? $"Loaded {result.Operations.Count} sample operation(s) from {databaseName} using drawing number {sample.HalDrawingNo}."
+                : $"Sample details loaded; no Opcenter operations were found for drawing number {sample.HalDrawingNo}.";
+        }
+        catch (SqlException exception)
+        {
+            logger.LogWarning(exception, "Opcenter operation lookup failed for sample drawing number {DrawingNo}.", sample.HalDrawingNo);
+            result.OperationsMessage = $"Sample details loaded, but Opcenter operations could not be fetched for drawing number {sample.HalDrawingNo}. See application logs for details.";
+        }
+    }
+
+    private async Task ReadOperationsAsync(SqlConnection connection, string databaseName, RouteCardLookupResult result, CancellationToken cancellationToken, string? partNoOverride = null)
     {
         var configuredSql = configuration["OpcenterQueries:ProductAndRouting"];
         var sql = string.IsNullOrWhiteSpace(configuredSql)
@@ -186,7 +285,7 @@ public sealed class OpcenterLookupService(IConfiguration configuration) : IOpcen
                     """
             : configuredSql;
         await using var command = new SqlCommand(sql, connection);
-        command.Parameters.Add(new SqlParameter("@PartNo", SqlDbType.NVarChar, 100) { Value = result.PartNo! });
+        command.Parameters.Add(new SqlParameter("@PartNo", SqlDbType.NVarChar, 100) { Value = partNoOverride ?? result.PartNo! });
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {

@@ -1,37 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
-  const panels = tabs.map(tab => document.getElementById(tab.getAttribute('aria-controls'))).filter(Boolean);
-
-  function activateTab(tab, moveFocus = false) {
-    tabs.forEach(candidate => {
-      const selected = candidate === tab;
-      candidate.classList.toggle('active', selected);
-      candidate.setAttribute('aria-selected', String(selected));
-      candidate.tabIndex = selected ? 0 : -1;
-    });
-    panels.forEach(panel => {
-      const selected = panel.id === tab.getAttribute('aria-controls');
-      panel.classList.toggle('active', selected);
-      panel.setAttribute('aria-hidden', String(!selected));
-    });
-    if (moveFocus) tab.focus();
-  }
-
-  tabs.forEach((tab, index) => {
-    tab.addEventListener('click', () => activateTab(tab));
-    tab.addEventListener('keydown', event => {
-      let nextIndex = index;
-      if (event.key === 'ArrowRight') nextIndex = (index + 1) % tabs.length;
-      else if (event.key === 'ArrowLeft') nextIndex = (index - 1 + tabs.length) % tabs.length;
-      else if (event.key === 'Home') nextIndex = 0;
-      else if (event.key === 'End') nextIndex = tabs.length - 1;
-      else return;
-      event.preventDefault();
-      activateTab(tabs[nextIndex], true);
-    });
-  });
-  if (tabs.length) activateTab(tabs[0]);
-
   document.querySelector('#print-route-card')?.addEventListener('click', () => window.print());
 
   const routeForm = document.querySelector('.route-form');
@@ -48,8 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
     'platingBatchNo', 'mixBatchNo', 'powderQty'
   ]);
 
-  function getFieldValue(field) {
-    if (!field.value) return null;
+  function getFieldValue(field, nullByDefault = false) {
+    if (!field.value) return nullByDefault ? null : undefined;
     return field.type === 'number' ? Number(field.value) : field.value;
   }
 
@@ -111,35 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return match ? Math.max(highest, Number(match[1])) : highest;
     }, 0) + 1;
   }
-
-  function addInputCell(row, name, label, type = 'text', value = '') {
-    const cell = document.createElement('td');
-    const isDescription = name.startsWith('operationDescription');
-    const input = isDescription ? document.createElement('textarea') : document.createElement('input');
-    input.name = name;
-    input.value = value ?? '';
-    input.setAttribute('aria-label', label);
-    if (!isDescription) {
-      input.type = type;
-      if (type === 'number') input.min = '0';
-    }
-    cell.append(input);
-    row.append(cell);
-  }
-
-  function addDeleteButton(row, label) {
-    const cell = document.createElement('td');
-    cell.className = 'delete-cell';
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'row-delete-button';
-    button.textContent = 'Delete';
-    button.setAttribute('aria-label', label);
-    button.addEventListener('click', () => row.remove());
-    cell.append(button);
-    row.append(cell);
-  }
-
   const operationsTable = document.querySelector('.operations-table');
   if (operationsTable) {
     const heading = document.createElement('th');
@@ -160,8 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
         ['operationNo', 'operation number', 'text'],
         ['operationDescription', 'operation description', 'text'],
         ['operationDepWcr', 'department or WCR', 'text'],
-        ['operationAccQty', 'accepted quantity', 'number'],
-        ['operationRejQty', 'rejected quantity', 'number'],
+        ['operationAccQty', 'accepted quantity', 'text'],
+        ['operationRejQty', 'rejected quantity', 'text'],
         ['operationStamp', 'stamp', 'text'],
         ['operationSign', 'signature', 'text']
       ];
@@ -176,8 +114,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (field && value !== null && value !== undefined) field.value = value;
   }
 
-  function populateOperations(operations) {
-    if (!operationsTable || !Array.isArray(operations) || operations.length === 0) return;
+  function populateOperations(operations, clearWhenEmpty = false) {
+    if (!operationsTable || !Array.isArray(operations)) return;
+    if (operations.length === 0 && !clearWhenEmpty) return;
     const tbody = operationsTable.tBodies[0];
     tbody.innerHTML = '';
     operations.forEach((operation, index) => {
@@ -186,8 +125,8 @@ document.addEventListener('DOMContentLoaded', () => {
       addInputCell(row, `operationNo${rowNumber}`, `Operation ${rowNumber} number`, 'text', operation.opNo);
       addInputCell(row, `operationDescription${rowNumber}`, `Operation ${rowNumber} description`, 'text', operation.operationName);
       addInputCell(row, `operationDepWcr${rowNumber}`, `Operation ${rowNumber} department or WCR`, 'text', operation.workcenterDepartment);
-      addInputCell(row, `operationAccQty${rowNumber}`, `Operation ${rowNumber} accepted quantity`, 'number');
-      addInputCell(row, `operationRejQty${rowNumber}`, `Operation ${rowNumber} rejected quantity`, 'number');
+      addInputCell(row, `operationAccQty${rowNumber}`, `Operation ${rowNumber} accepted quantity`, 'text');
+      addInputCell(row, `operationRejQty${rowNumber}`, `Operation ${rowNumber} rejected quantity`, 'text');
       addInputCell(row, `operationStamp${rowNumber}`, `Operation ${rowNumber} stamp`);
       addInputCell(row, `operationSign${rowNumber}`, `Operation ${rowNumber} signature`);
       addDeleteButton(row, `Delete row ${rowNumber}`);
@@ -205,7 +144,8 @@ document.addEventListener('DOMContentLoaded', () => {
     QTY: 'qty', QUANTITY: 'qty', ORDER_QTY: 'qty', SHOP_ORDER_QTY: 'qty',
     HAL_DRG_NO: 'halDrawingNo', HAL_DRAWING_NO: 'halDrawingNo', ISSUE_NO: 'issueNo',
     MATERIAL_SPECIFICATION: 'materialSpecification', MATERIAL_ISSUE: 'materialIssue', MATERIAL_DESCRIPTION: 'materialDescription',
-    MR_NO: 'mrNo', MATERIAL_TYPE: 'materialType', RECEIVED_CONDITION: 'receivedCondition',
+    MATERIAL_DATE: 'materialDate', REFERENCE_DRAWING_NO: 'referenceDrawingNo', PROJECT: 'operationProject', PROJECT_NAME: 'operationProject',
+    PRODUCT_TYPE: 'productType', DETP: 'productType', DETP_PRODUCT_TYPE: 'productType',
     RAW_MATERIAL_DIA: 'rawMaterialDia', RAW_MATERIAL_LENGTH: 'rawMaterialLength', RAW_MATERIAL_BATCH_NO: 'rawMaterialBatchNo',
     ALTERNATIVE_MATERIAL_SIZE: 'alternativeMaterialSize', RUBBER_SPECIFICATION: 'rubberSpecification', RUBBER_QTY: 'rubberQty', RUBBER_SUPPLIER: 'rubberSupplier',
     TA_PC_REF: 'taPcRef', BS_WEIGHT: 'bsWeight', FORGING_WEIGHT: 'forgingWeight', FORGING_PLANT: 'forgingPlant', FORGING_BATCH_NO: 'forgingBatchNo', FORGING_QTY: 'forgingQty',
@@ -220,35 +160,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  async function searchOrder() {
-    const orderNo = document.querySelector('[name="orderNo"]')?.value.trim();
-    const status = document.querySelector('#order-search-status');
-    const button = document.querySelector('#search-order-button');
-    if (!orderNo) {
-      if (status) status.textContent = 'Enter an order number.';
+  async function searchWorkOrder() {
+    const workOrderNo = document.querySelector('[name="workOrderNo"]')?.value.trim();
+    const status = document.querySelector('#work-order-search-status');
+    const button = document.querySelector('#search-work-order-button');
+    if (!workOrderNo) {
+      if (status) status.textContent = 'Enter a work order number.';
       return;
     }
 
     if (button) button.disabled = true;
     if (status) status.textContent = 'Searching...';
     try {
-      const response = await fetch(`/api/route-cards/lookup?orderNo=${encodeURIComponent(orderNo)}`);
+      const response = await fetch(`/api/route-cards/lookup?workOrderNo=${encodeURIComponent(workOrderNo)}`);
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'No matching data was found.');
+      if (!response.ok) throw new Error(data.error || data.detail || 'No matching data was found.');
 
-      setField('orderNo', data.orderNo || orderNo);
-      setField('workOrderNo', data.workOrderNo);
+      setField('orderNo', data.orderNo);
+      setField('workOrderNo', data.workOrderNo || workOrderNo);
       setField('partNo', data.partNo);
       setField('partName', data.partName);
       setField('pslNo', data.pslNo);
       setField('qty', data.qty);
       setField('jcQty', data.jcQty ?? data.qty);
       setField('operationPslNo', data.pslNo);
-      setField('operationWorkOrderNo', data.workOrderNo);
+      setField('operationWorkOrderNo', data.workOrderNo || workOrderNo);
       setField('operationJcQty', data.jcQty ?? data.qty);
       setMatchedFields(data.matchedFields);
-      populateOperations(data.operations);
-      if (status) status.textContent = `Loaded data from ${data.sourceTable || 'Opcenter'}.`;
+      populateOperations(data.operations, Boolean(data.operationsMessage));
+      if (status) status.textContent = data.operationsMessage || `Loaded data from ${data.sourceTable || 'RouteCard lookup'} (${data.operations?.length || 0} operations).`;
     } catch (error) {
       if (status) status.textContent = error.message;
     } finally {
@@ -283,8 +223,8 @@ document.addEventListener('DOMContentLoaded', () => {
       setField('operationWorkOrderNo', data.workOrderNo);
       setField('operationJcQty', data.jcQty ?? data.qty);
       setMatchedFields(data.matchedFields);
-      populateOperations(data.operations);
-      if (status) status.textContent = `Loaded ${data.records?.length || 0} matching rows and ${data.operations?.length || 0} operations from ${(data.sourceDatabases || []).filter((value, index, values) => values.indexOf(value) === index).join(', ') || 'HALFNF/HALNEW'}.`;
+      populateOperations(data.operations, Boolean(data.operationsMessage));
+      if (status) status.textContent = data.operationsMessage || `Loaded ${data.records?.length || 0} matching rows and ${data.operations?.length || 0} operations from ${(data.sourceDatabases || []).filter((value, index, values) => values.indexOf(value) === index).join(', ') || 'HALFNF/HALNEW'}.`;
     } catch (error) {
       if (status) status.textContent = error.message;
     } finally {
@@ -292,6 +232,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  document.querySelector('#search-work-order-button')?.addEventListener('click', searchWorkOrder);
+  document.querySelector('[name="workOrderNo"]')?.addEventListener('keydown', event => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      searchWorkOrder();
+    }
+  });
   document.querySelector('#search-part-button')?.addEventListener('click', searchPart);
   document.querySelector('[name="partNo"]')?.addEventListener('keydown', event => {
     if (event.key === 'Enter') {
