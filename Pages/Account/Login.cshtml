@@ -19,14 +19,14 @@
     <p class="login-subtitle">Sign in to Route Card Management</p>
     <form method="post" autocomplete="off">
       <input type="hidden" asp-for="ReturnUrl">
-      <label asp-for="Username">Username<input asp-for="Username" autocomplete="username" autofocus></label>
+      <label asp-for="Username">Username or serial number<input asp-for="Username" autocomplete="username" autofocus></label>
       <span asp-validation-for="Username"></span>
       <label asp-for="Password">Password<input asp-for="Password" type="password" autocomplete="current-password"></label>
       <span asp-validation-for="Password"></span>
       @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage)) { <p class="login-error">@Model.ErrorMessage</p> }
       <button type="submit" class="login-button">Sign in</button>
     </form>
-    <p class="login-hint">Authorized users: Mani, Nithin and Uday</p>
+    <p class="login-hint">Authorized username/password users: Mani, Nithin and Uday. Serial-number users can also sign in.</p>
   </main>
 </body>
 </html>

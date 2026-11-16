@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     'platingBatchNo', 'mixBatchNo', 'powderQty'
   ]);
   let userStamps = [];
+  let showStampOwners = false;
 
   function getFieldValue(field, nullByDefault = false) {
     if (!field.value) return nullByDefault ? null : undefined;
@@ -128,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!response.ok) throw new Error(`Profile request failed (HTTP ${response.status}).`);
     const profile = await response.json();
     userStamps = Array.isArray(profile.stamps) ? profile.stamps : [];
+    showStampOwners = profile.multipleUsers === true;
     bindApprovalControls();
   }
 
@@ -135,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (select.dataset.stampsLoaded === 'true') return;
     select.replaceChildren(new Option('', ''));
     userStamps.forEach(stamp => {
-      const option = new Option(stamp.stampValue, stamp.id);
+      const option = new Option(showStampOwners ? `${stamp.stampValue} - ${stamp.displayName}` : stamp.stampValue, stamp.id);
       option.dataset.base = stamp.stampValue;
       option.dataset.signature = stamp.signatureValue;
       select.add(option);

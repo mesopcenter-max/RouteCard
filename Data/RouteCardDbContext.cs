@@ -62,6 +62,7 @@ public sealed class RouteCardDbContext(DbContextOptions<RouteCardDbContext> opti
         user.ToTable("AppUsers");
         user.HasKey(account => account.Id);
         user.HasIndex(account => account.Username).IsUnique();
+        user.HasIndex(account => account.SerialNumber);
         user.Property(account => account.Username).HasMaxLength(200).IsRequired();
         user.Property(account => account.DisplayName).HasMaxLength(100).IsRequired();
         user.Property(account => account.PasswordHash).HasMaxLength(500).IsRequired();

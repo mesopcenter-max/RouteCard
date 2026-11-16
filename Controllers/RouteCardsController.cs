@@ -19,7 +19,14 @@ public sealed class RouteCardsController(IRouteCardService routeCards, IOpcenter
         {
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
                 return Unauthorized();
-            var card = await routeCards.SaveAsync(request, userId, cancellationToken);
+            int? serialNumber = null;
+            var serialClaim = User.FindFirstValue("serial_number");
+            if (serialClaim is not null)
+            {
+                if (!int.TryParse(serialClaim, out var parsedSerial)) return Unauthorized();
+                serialNumber = parsedSerial;
+            }
+            var card = await routeCards.SaveAsync(request, userId, serialNumber, cancellationToken);
             return CreatedAtAction(nameof(Get), new { id = card.Id }, card);
         }
         catch (ArgumentException exception)

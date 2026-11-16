@@ -7,6 +7,7 @@ public sealed class AppUser
     public string Username { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
     public string PhotoUrl { get; set; } = string.Empty;
+    public int? SerialNumber { get; set; }
     public List<UserStamp> Stamps { get; set; } = [];
 }
 

@@ -104,6 +104,12 @@ using (var scope = app.Services.CreateScope())
             CREATE INDEX [IX_RouteCardLookupSamples_PartNo] ON [dbo].[RouteCardLookupSamples] ([PartNo]);
         END
         """);
+    await db.Database.ExecuteSqlRawAsync("""
+        IF COL_LENGTH(N'dbo.AppUsers', N'SerialNumber') IS NULL
+            ALTER TABLE [dbo].[AppUsers] ADD [SerialNumber] int NULL;
+        IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE [name] = N'IX_AppUsers_SerialNumber' AND [object_id] = OBJECT_ID(N'dbo.AppUsers'))
+            CREATE INDEX [IX_AppUsers_SerialNumber] ON [dbo].[AppUsers] ([SerialNumber]);
+        """);
 
     var users = new[]
     {
@@ -134,6 +140,31 @@ using (var scope = app.Services.CreateScope())
         }
         user.PhotoUrl = seed.Photo;
     }
+
+    foreach (var seed in StampUserSeeds.All)
+    {
+        var user = await db.AppUsers.Include(account => account.Stamps).SingleOrDefaultAsync(account =>
+            account.SerialNumber == seed.SerialNumber && account.DisplayName == seed.DisplayName);
+        if (user is null)
+        {
+            user = new AppUser
+            {
+                DisplayName = seed.DisplayName,
+                Username = $"serial-{seed.SerialNumber}-{seed.UserNumber}@routecard.local",
+                PasswordHash = PasswordService.Hash("Admin@123"),
+                PhotoUrl = "/images/user-avatar.svg",
+                SerialNumber = seed.SerialNumber
+            };
+            db.AppUsers.Add(user);
+        }
+
+        foreach (var stampValue in seed.StampValues)
+        {
+            if (!user.Stamps.Any(stamp => stamp.StampValue == stampValue))
+                user.Stamps.Add(new UserStamp { StampValue = stampValue, SignatureValue = seed.DisplayName });
+        }
+    }
+
     await db.SaveChangesAsync();
 
     // Existing lookup-table setup remains below.

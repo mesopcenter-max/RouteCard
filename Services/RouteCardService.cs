@@ -7,13 +7,13 @@ namespace HALRouteCardApp.Services;
 
 public interface IRouteCardService
 {
-    Task<RouteCard> SaveAsync(RouteCardSaveRequest request, int userId, CancellationToken cancellationToken);
+    Task<RouteCard> SaveAsync(RouteCardSaveRequest request, int userId, int? serialNumber, CancellationToken cancellationToken);
     Task<RouteCard?> GetAsync(long id, CancellationToken cancellationToken);
 }
 
 public sealed class RouteCardService(RouteCardDbContext db) : IRouteCardService
 {
-    public async Task<RouteCard> SaveAsync(RouteCardSaveRequest request, int userId, CancellationToken cancellationToken)
+    public async Task<RouteCard> SaveAsync(RouteCardSaveRequest request, int userId, int? serialNumber, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
         if (string.IsNullOrWhiteSpace(request.Card.PartNo))
@@ -30,13 +30,15 @@ public sealed class RouteCardService(RouteCardDbContext db) : IRouteCardService
         {
             if (string.IsNullOrWhiteSpace(approvalRequest.OperationNo))
                 throw new ArgumentException("Each approval must include an operation number.", nameof(request));
-            var stamp = await db.UserStamps.SingleOrDefaultAsync(value => value.Id == approvalRequest.StampId && value.AppUserId == userId, cancellationToken);
+            var stamp = await db.UserStamps.Include(value => value.AppUser).SingleOrDefaultAsync(value =>
+                value.Id == approvalRequest.StampId &&
+                (value.AppUserId == userId || (serialNumber.HasValue && value.AppUser.SerialNumber == serialNumber.Value)), cancellationToken);
             if (stamp is null)
                 throw new ArgumentException("The selected stamp does not belong to the signed-in user.", nameof(request));
             db.RouteCardApprovals.Add(new RouteCardApproval
             {
                 RouteCardId = card.Id,
-                AppUserId = userId,
+                AppUserId = stamp.AppUserId,
                 UserStampId = stamp.Id,
                 OperationNo = approvalRequest.OperationNo.Trim(),
                 StampValue = stamp.StampValue,
