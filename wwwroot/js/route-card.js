@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const stampText = option?.dataset.base || option?.textContent.split(' - ')[0] || '';
         const signatureText = option?.dataset.signature || signature?.dataset.baseSignature || '';
         const dateText = approvedAt
-          ? `Approved: ${new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(`${approvedAt}T00:00:00`))}`
+          ? new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(`${approvedAt}T00:00:00`))
           : '';
         const stampGraphic = row.querySelector('.print-approval-stamp');
         stampGraphic.textContent = stampText;
@@ -116,10 +116,24 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
     document.querySelectorAll('[data-card-stamp-select]').forEach(select => {
-      const stamp = select.closest('.e-sign-control')?.querySelector('.print-card-stamp');
+      const control = select.closest('.e-sign-control');
+      const stamp = control?.querySelector('.print-card-stamp');
       if (stamp) {
         stamp.textContent = select.selectedOptions[0]?.dataset.base || '';
         stamp.classList.toggle('has-stamp', Boolean(stamp.textContent));
+        let approvalDate = control.querySelector('.print-card-approval-date');
+        if (!approvalDate) {
+          approvalDate = document.createElement('small');
+          approvalDate.className = 'print-card-approval-date';
+          approvalDate.setAttribute('aria-hidden', 'true');
+          stamp.after(approvalDate);
+        }
+        const key = select.dataset.approvalKey;
+        const approvedAt = document.querySelector(`[name="${key}ApprovedAt"]`)?.value;
+        approvalDate.textContent = approvedAt
+          ? new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(`${approvedAt}T00:00:00`))
+          : '';
+        approvalDate.classList.toggle('has-date', Boolean(approvedAt));
       }
     });
   }
