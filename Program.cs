@@ -103,12 +103,27 @@ using (var scope = app.Services.CreateScope())
             CREATE INDEX [IX_RouteCardLookupSamples_WorkOrderNo] ON [dbo].[RouteCardLookupSamples] ([WorkOrderNo]);
             CREATE INDEX [IX_RouteCardLookupSamples_PartNo] ON [dbo].[RouteCardLookupSamples] ([PartNo]);
         END
+        IF OBJECT_ID(N'dbo.RouteCardOperationAttachments', N'U') IS NULL
+        BEGIN
+            CREATE TABLE [dbo].[RouteCardOperationAttachments]
+            (
+                [Id] bigint IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                [RouteCardId] bigint NOT NULL,
+                [OperationNo] nvarchar(100) NOT NULL,
+                [OriginalFileName] nvarchar(255) NOT NULL,
+                [StoredFileName] nvarchar(100) NOT NULL,
+                [CreatedUtc] datetime2 NOT NULL DEFAULT SYSUTCDATETIME(),
+                CONSTRAINT [FK_RouteCardOperationAttachments_RouteCards] FOREIGN KEY ([RouteCardId]) REFERENCES [dbo].[RouteCards]([Id]) ON DELETE CASCADE
+            );
+        END
         """);
     await db.Database.ExecuteSqlRawAsync("""
         IF COL_LENGTH(N'dbo.AppUsers', N'SerialNumber') IS NULL
             ALTER TABLE [dbo].[AppUsers] ADD [SerialNumber] int NULL;
         IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE [name] = N'IX_AppUsers_SerialNumber' AND [object_id] = OBJECT_ID(N'dbo.AppUsers'))
             CREATE INDEX [IX_AppUsers_SerialNumber] ON [dbo].[AppUsers] ([SerialNumber]);
+        IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE [name] = N'IX_RouteCardOperationAttachments_RouteCardId_OperationNo' AND [object_id] = OBJECT_ID(N'dbo.RouteCardOperationAttachments'))
+            CREATE UNIQUE INDEX [IX_RouteCardOperationAttachments_RouteCardId_OperationNo] ON [dbo].[RouteCardOperationAttachments] ([RouteCardId], [OperationNo]);
         """);
 
     var users = new[]

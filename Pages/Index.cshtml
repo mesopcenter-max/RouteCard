@@ -45,6 +45,15 @@
       @await Html.PartialAsync("_Sheet3")
       <div class="record-actions"><span id="save-route-card-status" role="status" aria-live="polite">Review each section, then save or print.</span><span id="stamp-load-status" role="status" aria-live="polite"></span><button type="submit" class="print-button" id="save-route-card">Save Route Card</button><button type="button" class="print-button" id="print-route-card">Print / Save as PDF <span aria-hidden="true">▣</span></button></div>
     </form>
+    <dialog id="attachment-preview-dialog" class="attachment-preview-dialog" aria-labelledby="attachment-preview-title">
+      <div class="dialog-header">
+        <h2 id="attachment-preview-title" class="dialog-title">Attachment preview</h2>
+        <button type="button" data-close-attachment-preview class="dialog-close">Close</button>
+      </div>
+      <p id="attachment-preview-name" class="dialog-file-name"></p>
+      <div id="attachment-preview-content" class="dialog-content"></div>
+      <a id="attachment-preview-download" class="download-button" href="#" download>Download original</a>
+    </dialog>
   </main>
 
   <footer class="app-footer"><span>© @DateTime.Today.Year Hindustan Aeronautics Limited (HAL). All Rights Reserved.</span><span>Foundry &amp; Forge Division <b aria-hidden="true">·</b> Route Card Management</span></footer>

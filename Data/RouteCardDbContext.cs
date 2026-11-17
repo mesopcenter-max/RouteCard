@@ -10,6 +10,7 @@ public sealed class RouteCardDbContext(DbContextOptions<RouteCardDbContext> opti
     public DbSet<AppUser> AppUsers => Set<AppUser>();
     public DbSet<UserStamp> UserStamps => Set<UserStamp>();
     public DbSet<RouteCardApproval> RouteCardApprovals => Set<RouteCardApproval>();
+    public DbSet<RouteCardOperationAttachment> OperationAttachments => Set<RouteCardOperationAttachment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -84,5 +85,14 @@ public sealed class RouteCardDbContext(DbContextOptions<RouteCardDbContext> opti
         approval.HasOne(value => value.RouteCard).WithMany().HasForeignKey(value => value.RouteCardId);
         approval.HasOne(value => value.AppUser).WithMany().HasForeignKey(value => value.AppUserId);
         approval.HasOne(value => value.UserStamp).WithMany().HasForeignKey(value => value.UserStampId);
+
+        var attachment = modelBuilder.Entity<RouteCardOperationAttachment>();
+        attachment.ToTable("RouteCardOperationAttachments");
+        attachment.HasKey(attachment => attachment.Id);
+        attachment.Property(attachment => attachment.OperationNo).HasMaxLength(100).IsRequired();
+        attachment.Property(attachment => attachment.OriginalFileName).HasMaxLength(255).IsRequired();
+        attachment.Property(attachment => attachment.StoredFileName).HasMaxLength(100).IsRequired();
+        attachment.HasIndex(attachment => new { attachment.RouteCardId, attachment.OperationNo }).IsUnique();
+        attachment.HasOne<RouteCard>().WithMany().HasForeignKey(attachment => attachment.RouteCardId).OnDelete(DeleteBehavior.Cascade);
     }
 }

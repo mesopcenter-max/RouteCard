@@ -231,13 +231,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   routeForm?.addEventListener('submit', async event => {
     event.preventDefault();
+
     if (saveButton) saveButton.disabled = true;
     if (saveStatus) saveStatus.textContent = 'Saving route card...';
 
     const card = {};
     const traceability = [];
     Array.from(routeForm.elements).forEach(field => {
-      if (!field.name) return;
+      if (!field.name || field.type === 'file') return;
       const value = getFieldValue(field);
       if (cardFieldNames.has(field.name)) {
         card[field.name] = value;
@@ -260,6 +261,48 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (!response.ok) throw new Error(result.detail || result.error || 'The route card could not be saved.');
       if (saveStatus) saveStatus.textContent = `Route card saved successfully (record ${result.id}).`;
+
+      const attachmentErrors = [];
+      for (const row of operationRows) {
+        const fileInput = row.querySelector('[data-operation-attachment]');
+        if (fileInput?.files.length > 0) {
+          const operationNo = row.querySelector('[name^="operationNo"]')?.value.trim();
+          if (!operationNo) {
+            attachmentErrors.push(`Operation number is missing for the attached file in row ${operationRows.indexOf(row) + 1}.`);
+            continue;
+          }
+          const file = fileInput.files[0];
+          const formData = new FormData();
+          formData.append('file', file);
+          try {
+            const uploadResponse = await fetch(`/api/route-cards/${result.id}/operations/${encodeURIComponent(operationNo)}/attachment`, {
+              method: 'POST',
+              body: formData
+            });
+            const uploadResult = await uploadResponse.json();
+            if (!uploadResponse.ok) {
+              attachmentErrors.push(`${file.name}: ${uploadResult.detail || uploadResult.error || 'Failed to upload attachment.'}`);
+              continue;
+            }
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'attachment-preview-button';
+            button.setAttribute('aria-haspopup', 'dialog');
+            button.dataset.attachmentPreview = '';
+            button.dataset.previewUrl = uploadResult.previewUrl;
+            button.dataset.downloadUrl = uploadResult.url;
+            button.dataset.fileName = file.name;
+            button.dataset.previewSupported = String(uploadResult.previewSupported === true);
+            button.textContent = file.name;
+            row.querySelector('.attachment-status').replaceChildren(button);
+          } catch (error) {
+            attachmentErrors.push(`${file.name}: ${error.message}`);
+          }
+        }
+      }
+      if (attachmentErrors.length > 0) {
+        saveStatus.textContent = `Route card saved (ID: ${result.id}), but there were errors uploading some attachments: ${attachmentErrors.join(' ')}`;
+      }
     } catch (error) {
       if (saveStatus) saveStatus.textContent = `Save failed: ${error.message}`;
     } finally {
@@ -310,6 +353,22 @@ document.addEventListener('DOMContentLoaded', () => {
     dateCell.append(date);
     row.append(dateCell);
 
+    const attachmentCell = document.createElement('td');
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.name = `operationAttachment${rowNumber}`;
+    fileInput.setAttribute('aria-label', `Operation ${rowNumber} Process TRecord attachment`);
+    fileInput.accept = '.pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg';
+    fileInput.dataset.operationAttachment = '';
+    attachmentCell.append(fileInput);
+
+    const statusSpan = document.createElement('span');
+    statusSpan.className = 'attachment-status';
+    statusSpan.setAttribute('aria-live', 'polite');
+    attachmentCell.append(statusSpan);
+
+    row.append(attachmentCell);
+
     const approveCell = document.createElement('td');
     const approveButton = document.createElement('button');
     approveButton.type = 'button';
@@ -318,6 +377,7 @@ document.addEventListener('DOMContentLoaded', () => {
     approveButton.setAttribute('aria-label', `Approve operation ${rowNumber}`);
     approveCell.append(approveButton);
     row.append(approveCell);
+
     ensureApprovalPrintFields(row);
   }
 
@@ -474,4 +534,51 @@ document.addEventListener('DOMContentLoaded', () => {
     window.print();
   });
   window.addEventListener('beforeprint', prepareApprovalPrint);
+
+  document.addEventListener('click', event => {
+    const button = event.target.closest('[data-attachment-preview]');
+    if (button) {
+      const fileName = button.dataset.fileName;
+      const downloadUrl = button.dataset.downloadUrl;
+      const previewUrl = button.dataset.previewUrl;
+      const previewSupported = button.dataset.previewSupported === 'true';
+
+      attachmentPreviewTitle.textContent = 'Attachment Preview';
+      attachmentPreviewName.textContent = fileName;
+      attachmentPreviewDownload.href = downloadUrl;
+      attachmentPreviewDownload.download = fileName;
+      attachmentPreviewContent.replaceChildren();
+
+      const fileExtension = fileName.split('.').pop().toLowerCase();
+      if (previewSupported && ['png', 'jpg', 'jpeg'].includes(fileExtension)) {
+        const img = document.createElement('img');
+        img.src = previewUrl;
+        img.alt = fileName;
+        img.style.maxWidth = '100%';
+        img.style.height = 'auto';
+        attachmentPreviewContent.appendChild(img);
+      } else if (previewSupported && ['pdf', 'txt'].includes(fileExtension)) {
+        const iframe = document.createElement('iframe');
+        iframe.src = previewUrl;
+        iframe.title = fileName;
+        iframe.style.width = '100%';
+        iframe.style.height = '70vh';
+        attachmentPreviewContent.appendChild(iframe);
+      } else {
+        attachmentPreviewContent.textContent = 'This file type cannot be previewed in the browser. ';
+      }
+
+      attachmentPreviewDialog.showModal();
+    }
+  });
+
+  document.querySelectorAll('[data-close-attachment-preview]').forEach(button => {
+    button.addEventListener('click', () => {
+      attachmentPreviewDialog.close();
+      attachmentPreviewContent.replaceChildren();
+    });
+  });
+  attachmentPreviewDialog.addEventListener('close', () => {
+    attachmentPreviewContent.replaceChildren();
+  });
 });
