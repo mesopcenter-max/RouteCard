@@ -3,6 +3,7 @@ namespace HALRouteCardApp.Models;
 public sealed class RouteCard
 {
     public long Id { get; set; }
+    public int? CreatedByUserId { get; set; }
     public string? RouteCardNo { get; set; }
     public string? OrderNo { get; set; }
     public decimal? Qty { get; set; }

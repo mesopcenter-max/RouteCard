@@ -10,6 +10,7 @@ public sealed class RouteCardDbContext(DbContextOptions<RouteCardDbContext> opti
     public DbSet<AppUser> AppUsers => Set<AppUser>();
     public DbSet<UserStamp> UserStamps => Set<UserStamp>();
     public DbSet<RouteCardApproval> RouteCardApprovals => Set<RouteCardApproval>();
+    public DbSet<ProcessRecordAttachment> ProcessRecordAttachments => Set<ProcessRecordAttachment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -20,6 +21,8 @@ public sealed class RouteCardDbContext(DbContextOptions<RouteCardDbContext> opti
         entity.HasIndex(card => card.PartNo);
         entity.HasIndex(card => card.OrderNo);
         entity.HasIndex(card => card.WorkOrderNo);
+        entity.HasIndex(card => card.CreatedByUserId);
+        entity.HasOne<AppUser>().WithMany().HasForeignKey(card => card.CreatedByUserId);
         entity.Property(card => card.Qty).HasPrecision(18, 3);
         entity.Property(card => card.JcQty).HasPrecision(18, 3);
         entity.Property(card => card.RubberQty).HasPrecision(18, 3);
@@ -84,5 +87,21 @@ public sealed class RouteCardDbContext(DbContextOptions<RouteCardDbContext> opti
         approval.HasOne(value => value.RouteCard).WithMany().HasForeignKey(value => value.RouteCardId);
         approval.HasOne(value => value.AppUser).WithMany().HasForeignKey(value => value.AppUserId);
         approval.HasOne(value => value.UserStamp).WithMany().HasForeignKey(value => value.UserStampId);
+
+        var attachment = modelBuilder.Entity<ProcessRecordAttachment>();
+        attachment.ToTable("ProcessRecordAttachments");
+        attachment.HasKey(value => value.Id);
+        attachment.HasIndex(value => value.OperationNo);
+        attachment.HasIndex(value => value.DepartmentId);
+        attachment.HasIndex(value => value.AttachedAtUtc);
+        attachment.Property(value => value.OperationNo).HasMaxLength(100).IsRequired();
+        attachment.Property(value => value.DepartmentId).HasMaxLength(100).IsRequired();
+        attachment.Property(value => value.FileName).HasMaxLength(255).IsRequired();
+        attachment.Property(value => value.ContentType).HasMaxLength(100).IsRequired();
+        attachment.Property(value => value.Content).HasColumnType("varbinary(max)").IsRequired();
+        attachment.Property(value => value.AttachedByName).HasMaxLength(100).IsRequired();
+        attachment.Property(value => value.AttachedAtUtc).HasDefaultValueSql("SYSUTCDATETIME()");
+        attachment.HasOne(value => value.RouteCard).WithMany().HasForeignKey(value => value.RouteCardId);
+        attachment.HasOne(value => value.AttachedByUser).WithMany().HasForeignKey(value => value.AttachedByUserId);
     }
 }

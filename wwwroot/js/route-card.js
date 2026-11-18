@@ -15,6 +15,104 @@ document.addEventListener('DOMContentLoaded', () => {
   ]);
   let userStamps = [];
   let showStampOwners = false;
+  let currentRouteCardId = null;
+  const pendingProcessRecordFiles = new Map();
+  const recordsPanel = document.querySelector('#process-records-panel');
+  const processRecordsBody = document.querySelector('#process-records-body');
+  const processRecordStatus = document.querySelector('#process-record-status');
+  let processRecordSortDescending = true;
+  let processRecordSearchTimer;
+
+  function renderPendingProcessFiles(row) {
+    const status = row.querySelector('.pending-process-records');
+    if (!status) return;
+    const files = pendingProcessRecordFiles.get(row) || [];
+    status.textContent = files.length ? `Selected: ${files.map(file => file.name).join(', ')}` : '';
+  }
+
+  function getProcessRecordFilters() {
+    return new URLSearchParams({
+      search: document.querySelector('#process-record-search')?.value.trim() || '',
+      operationNo: document.querySelector('#process-record-operation-filter')?.value.trim() || '',
+      departmentId: document.querySelector('#process-record-department-filter')?.value.trim() || '',
+      sort: document.querySelector('#process-record-sort')?.value || 'date',
+      descending: String(processRecordSortDescending)
+    });
+  }
+
+  async function loadProcessRecords() {
+    if (!processRecordsBody || !processRecordStatus) return;
+    processRecordStatus.textContent = 'Loading attached process records...';
+    try {
+      const response = await fetch(`/api/process-records?${getProcessRecordFilters()}`);
+      const records = await response.json();
+      if (!response.ok) throw new Error(records.detail || records.error || 'Attached process records could not be loaded.');
+      processRecordsBody.replaceChildren();
+      records.forEach(record => {
+        const row = document.createElement('tr');
+        const attachedAt = record.attachedAtUtc.endsWith('Z') ? record.attachedAtUtc : `${record.attachedAtUtc}Z`;
+        [record.fileName, record.operationNo, record.departmentId, record.routeCardNo || '', record.attachedByName,
+          new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(attachedAt))
+        ].forEach(value => {
+          const cell = document.createElement('td');
+          cell.textContent = value ?? '';
+          row.append(cell);
+        });
+        const actions = document.createElement('td');
+        const view = document.createElement('a');
+        view.href = `/api/process-records/${encodeURIComponent(record.id)}/preview`;
+        view.target = '_blank';
+        view.rel = 'noopener noreferrer';
+        view.textContent = 'View';
+        const download = document.createElement('a');
+        download.href = `/api/process-records/${encodeURIComponent(record.id)}/file?download=true`;
+        download.textContent = 'Download';
+        actions.append(view, document.createTextNode(' · '), download);
+        row.append(actions);
+        processRecordsBody.append(row);
+      });
+      if (records.length === 0) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 7;
+        cell.textContent = 'No process records match these filters.';
+        row.append(cell);
+        processRecordsBody.append(row);
+      }
+      processRecordStatus.textContent = `${records.length} attached process record${records.length === 1 ? '' : 's'} found.`;
+    } catch (error) {
+      processRecordStatus.textContent = `Could not load process records: ${error.message}`;
+    }
+  }
+
+  async function uploadPendingProcessFiles(routeCardId) {
+    for (const [row, files] of [...pendingProcessRecordFiles]) {
+      const operationNo = row.querySelector('[name^="operationNo"]')?.value.trim();
+      const departmentId = row.querySelector('[name^="operationDepWcr"]')?.value.trim();
+      const remainingFiles = [];
+      for (let index = 0; index < files.length; index++) {
+        const formData = new FormData();
+        formData.append('operationNo', operationNo);
+        formData.append('departmentId', departmentId);
+        formData.append('file', files[index]);
+        const response = await fetch(`/api/process-records/${encodeURIComponent(routeCardId)}/attachments`, { method: 'POST', body: formData });
+        if (!response.ok) {
+          let result = {};
+          try { result = await response.json(); } catch { /* The response may not contain JSON. */ }
+          remainingFiles.push(...files.slice(index));
+          pendingProcessRecordFiles.set(row, remainingFiles);
+          renderPendingProcessFiles(row);
+          throw new Error(result.detail || result.error || `Attachment upload failed (HTTP ${response.status}).`);
+        }
+        const filesStillPending = files.slice(index + 1);
+        pendingProcessRecordFiles.set(row, filesStillPending);
+        renderPendingProcessFiles(row);
+      }
+      pendingProcessRecordFiles.delete(row);
+      renderPendingProcessFiles(row);
+    }
+    if (recordsPanel && !recordsPanel.hidden) await loadProcessRecords();
+  }
 
   function getFieldValue(field, nullByDefault = false) {
     if (!field.value) return nullByDefault ? null : undefined;
@@ -234,6 +332,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (saveButton) saveButton.disabled = true;
     if (saveStatus) saveStatus.textContent = 'Saving route card...';
 
+    for (const [row, files] of pendingProcessRecordFiles) {
+      if (files.length && (!row.querySelector('[name^="operationNo"]')?.value.trim() || !row.querySelector('[name^="operationDepWcr"]')?.value.trim())) {
+        if (saveStatus) saveStatus.textContent = 'Enter the operation number and Dept ID / WCR for every row with an attachment.';
+        if (saveButton) saveButton.disabled = false;
+        return;
+      }
+    }
+
+    routeForm.querySelectorAll('[data-process-record-files]').forEach(input => { input.disabled = true; });
     const card = {};
     const traceability = [];
     Array.from(routeForm.elements).forEach(field => {
@@ -245,7 +352,9 @@ document.addEventListener('DOMContentLoaded', () => {
         traceability.push({ field: field.name, value });
       }
     });
+    card.id = currentRouteCardId || 0;
 
+    let routeCardSaved = false;
     try {
       const response = await fetch('/api/route-cards', {
         method: 'POST',
@@ -259,10 +368,17 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error(`The server returned HTTP ${response.status}.`);
       }
       if (!response.ok) throw new Error(result.detail || result.error || 'The route card could not be saved.');
+      currentRouteCardId = result.id;
+      routeCardSaved = true;
+      if (pendingProcessRecordFiles.size) {
+        if (saveStatus) saveStatus.textContent = 'Route card saved; uploading process records...';
+        await uploadPendingProcessFiles(currentRouteCardId);
+      }
       if (saveStatus) saveStatus.textContent = `Route card saved successfully (record ${result.id}).`;
     } catch (error) {
-      if (saveStatus) saveStatus.textContent = `Save failed: ${error.message}`;
+      if (saveStatus) saveStatus.textContent = `${routeCardSaved ? 'Route card saved, but an attachment upload failed' : 'Save failed'}: ${error.message}`;
     } finally {
+      routeForm.querySelectorAll('[data-process-record-files]').forEach(input => { input.disabled = false; });
       if (saveButton) saveButton.disabled = false;
     }
   });
@@ -318,8 +434,113 @@ document.addEventListener('DOMContentLoaded', () => {
     approveButton.setAttribute('aria-label', `Approve operation ${rowNumber}`);
     approveCell.append(approveButton);
     row.append(approveCell);
+
+    const attachmentCell = document.createElement('td');
+    const attachmentInput = document.createElement('input');
+    attachmentInput.type = 'file';
+    attachmentInput.multiple = true;
+    attachmentInput.accept = '.pdf,.doc,.docx,.xls,.xlsx';
+    attachmentInput.dataset.processRecordFiles = '';
+    attachmentInput.setAttribute('aria-label', `Operation ${rowNumber} process record attachments`);
+    const pendingFiles = document.createElement('small');
+    pendingFiles.className = 'pending-process-records';
+    pendingFiles.setAttribute('aria-live', 'polite');
+    attachmentCell.append(attachmentInput, pendingFiles);
+    row.append(attachmentCell);
     ensureApprovalPrintFields(row);
   }
+
+  operationsTable?.addEventListener('change', event => {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement) || !input.matches('[data-process-record-files]')) return;
+    const row = input.closest('tr');
+    if (!row) return;
+    const files = pendingProcessRecordFiles.get(row) || [];
+    const allowedExtensions = new Set(['.pdf', '.doc', '.docx', '.xls', '.xlsx']);
+    const invalidFiles = [];
+    let hasNewValidFiles = false;
+    Array.from(input.files || []).forEach(file => {
+      const extension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
+      if (!allowedExtensions.has(extension) || file.size === 0 || file.size > 25 * 1024 * 1024) {
+        invalidFiles.push(file.name);
+      } else {
+        files.push(file);
+        hasNewValidFiles = true;
+      }
+    });
+    if (files.length) pendingProcessRecordFiles.set(row, files);
+    renderPendingProcessFiles(row);
+    if (invalidFiles.length) {
+      const status = row.querySelector('.pending-process-records');
+      status.textContent += `${status.textContent ? ' ' : ''}Not added (unsupported or over 25 MB): ${invalidFiles.join(', ')}`;
+    }
+    input.value = '';
+    if (hasNewValidFiles) {
+      const operationNo = row.querySelector('[name^="operationNo"]')?.value.trim();
+      const departmentId = row.querySelector('[name^="operationDepWcr"]')?.value.trim();
+      if (!document.querySelector('[name="partNo"]')?.value.trim()) {
+        if (saveStatus) saveStatus.textContent = 'Enter the Part no. before attaching process records.';
+      } else if (!operationNo || !departmentId) {
+        if (saveStatus) saveStatus.textContent = 'Enter the operation number and Dept ID / WCR before attaching process records.';
+      } else if (!saveButton?.disabled) {
+        routeForm?.requestSubmit(saveButton || undefined);
+      }
+    }
+  });
+
+  operationsTable?.addEventListener('change', event => {
+    const field = event.target;
+    if (!(field instanceof HTMLInputElement) || !/^operation(No|DepWcr)\d+$/.test(field.name)) return;
+    const row = field.closest('tr');
+    if (!row || !(pendingProcessRecordFiles.get(row)?.length) || saveButton?.disabled) return;
+    if (document.querySelector('[name="partNo"]')?.value.trim() &&
+        row.querySelector('[name^="operationNo"]')?.value.trim() &&
+        row.querySelector('[name^="operationDepWcr"]')?.value.trim()) {
+      routeForm?.requestSubmit(saveButton || undefined);
+    }
+  });
+
+  document.querySelector('[name="partNo"]')?.addEventListener('change', () => {
+    if (saveButton?.disabled) return;
+    const readyRowExists = [...pendingProcessRecordFiles].some(([row, files]) =>
+      files.length && row.querySelector('[name^="operationNo"]')?.value.trim() &&
+      row.querySelector('[name^="operationDepWcr"]')?.value.trim());
+    if (readyRowExists) routeForm?.requestSubmit(saveButton || undefined);
+  });
+
+  const routeCardTab = document.querySelector('#route-card-tab');
+  const processRecordsTab = document.querySelector('#process-records-tab');
+  const routeCardPanel = document.querySelector('#route-card-panel');
+  routeCardTab?.addEventListener('click', () => {
+    routeCardPanel.hidden = false;
+    recordsPanel.hidden = true;
+    routeCardTab.classList.add('active');
+    routeCardTab.setAttribute('aria-selected', 'true');
+    processRecordsTab.classList.remove('active');
+    processRecordsTab.setAttribute('aria-selected', 'false');
+  });
+  processRecordsTab?.addEventListener('click', () => {
+    routeCardPanel.hidden = true;
+    recordsPanel.hidden = false;
+    processRecordsTab.classList.add('active');
+    processRecordsTab.setAttribute('aria-selected', 'true');
+    routeCardTab.classList.remove('active');
+    routeCardTab.setAttribute('aria-selected', 'false');
+    loadProcessRecords();
+  });
+
+  ['#process-record-search', '#process-record-operation-filter', '#process-record-department-filter'].forEach(selector => {
+    document.querySelector(selector)?.addEventListener('input', () => {
+      clearTimeout(processRecordSearchTimer);
+      processRecordSearchTimer = setTimeout(loadProcessRecords, 250);
+    });
+  });
+  document.querySelector('#process-record-sort')?.addEventListener('change', loadProcessRecords);
+  document.querySelector('#process-record-sort-order')?.addEventListener('click', event => {
+    processRecordSortDescending = !processRecordSortDescending;
+    event.currentTarget.textContent = processRecordSortDescending ? 'Descending' : 'Ascending';
+    loadProcessRecords();
+  });
 
   if (operationsTable) operationsTable.tBodies[0].querySelectorAll('tr').forEach(ensureApprovalPrintFields);
 

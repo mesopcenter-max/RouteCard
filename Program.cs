@@ -103,8 +103,35 @@ using (var scope = app.Services.CreateScope())
             CREATE INDEX [IX_RouteCardLookupSamples_WorkOrderNo] ON [dbo].[RouteCardLookupSamples] ([WorkOrderNo]);
             CREATE INDEX [IX_RouteCardLookupSamples_PartNo] ON [dbo].[RouteCardLookupSamples] ([PartNo]);
         END
+        IF OBJECT_ID(N'dbo.ProcessRecordAttachments', N'U') IS NULL
+        BEGIN
+            CREATE TABLE [dbo].[ProcessRecordAttachments]
+            (
+                [Id] bigint IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                [RouteCardId] bigint NOT NULL,
+                [OperationNo] nvarchar(100) NOT NULL,
+                [DepartmentId] nvarchar(100) NOT NULL,
+                [FileName] nvarchar(255) NOT NULL,
+                [ContentType] nvarchar(100) NOT NULL,
+                [Content] varbinary(max) NOT NULL,
+                [AttachedByUserId] int NOT NULL,
+                [AttachedByName] nvarchar(100) NOT NULL,
+                [AttachedAtUtc] datetime2 NOT NULL CONSTRAINT [DF_ProcessRecordAttachments_AttachedAtUtc] DEFAULT SYSUTCDATETIME(),
+                CONSTRAINT [FK_ProcessRecordAttachments_RouteCards] FOREIGN KEY ([RouteCardId]) REFERENCES [dbo].[RouteCards]([Id]),
+                CONSTRAINT [FK_ProcessRecordAttachments_AppUsers] FOREIGN KEY ([AttachedByUserId]) REFERENCES [dbo].[AppUsers]([Id])
+            );
+            CREATE INDEX [IX_ProcessRecordAttachments_OperationNo] ON [dbo].[ProcessRecordAttachments] ([OperationNo]);
+            CREATE INDEX [IX_ProcessRecordAttachments_DepartmentId] ON [dbo].[ProcessRecordAttachments] ([DepartmentId]);
+            CREATE INDEX [IX_ProcessRecordAttachments_AttachedAtUtc] ON [dbo].[ProcessRecordAttachments] ([AttachedAtUtc]);
+        END
         """);
     await db.Database.ExecuteSqlRawAsync("""
+        IF COL_LENGTH(N'dbo.RouteCards', N'CreatedByUserId') IS NULL
+            ALTER TABLE [dbo].[RouteCards] ADD [CreatedByUserId] int NULL;
+        IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE [name] = N'FK_RouteCards_AppUsers_CreatedByUserId')
+            ALTER TABLE [dbo].[RouteCards] ADD CONSTRAINT [FK_RouteCards_AppUsers_CreatedByUserId] FOREIGN KEY ([CreatedByUserId]) REFERENCES [dbo].[AppUsers]([Id]);
+        IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE [name] = N'IX_RouteCards_CreatedByUserId' AND [object_id] = OBJECT_ID(N'dbo.RouteCards'))
+            CREATE INDEX [IX_RouteCards_CreatedByUserId] ON [dbo].[RouteCards] ([CreatedByUserId]);
         IF COL_LENGTH(N'dbo.AppUsers', N'SerialNumber') IS NULL
             ALTER TABLE [dbo].[AppUsers] ADD [SerialNumber] int NULL;
         IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE [name] = N'IX_AppUsers_SerialNumber' AND [object_id] = OBJECT_ID(N'dbo.AppUsers'))

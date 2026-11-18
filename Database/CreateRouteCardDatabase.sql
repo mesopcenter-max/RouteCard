@@ -67,6 +67,14 @@ BEGIN
 END;
 GO
 
+IF COL_LENGTH(N'dbo.RouteCards', N'CreatedByUserId') IS NULL
+    ALTER TABLE dbo.RouteCards ADD CreatedByUserId INT NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_RouteCards_AppUsers_CreatedByUserId')
+    ALTER TABLE dbo.RouteCards ADD CONSTRAINT FK_RouteCards_AppUsers_CreatedByUserId FOREIGN KEY (CreatedByUserId) REFERENCES dbo.AppUsers(Id);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_RouteCards_CreatedByUserId' AND object_id = OBJECT_ID(N'dbo.RouteCards'))
+    CREATE INDEX IX_RouteCards_CreatedByUserId ON dbo.RouteCards(CreatedByUserId);
+GO
+
 IF OBJECT_ID(N'dbo.AppUsers', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.AppUsers
@@ -105,5 +113,26 @@ BEGIN
         SignatureValue NVARCHAR(200) NOT NULL,
         ApprovedAt DATETIME2 NOT NULL
     );
+END;
+GO
+
+IF OBJECT_ID(N'dbo.ProcessRecordAttachments', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ProcessRecordAttachments
+    (
+        Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ProcessRecordAttachments PRIMARY KEY,
+        RouteCardId BIGINT NOT NULL CONSTRAINT FK_ProcessRecordAttachments_RouteCards REFERENCES dbo.RouteCards(Id),
+        OperationNo NVARCHAR(100) NOT NULL,
+        DepartmentId NVARCHAR(100) NOT NULL,
+        FileName NVARCHAR(255) NOT NULL,
+        ContentType NVARCHAR(100) NOT NULL,
+        Content VARBINARY(MAX) NOT NULL,
+        AttachedByUserId INT NOT NULL CONSTRAINT FK_ProcessRecordAttachments_AppUsers REFERENCES dbo.AppUsers(Id),
+        AttachedByName NVARCHAR(100) NOT NULL,
+        AttachedAtUtc DATETIME2 NOT NULL CONSTRAINT DF_ProcessRecordAttachments_AttachedAtUtc DEFAULT SYSUTCDATETIME()
+    );
+    CREATE INDEX IX_ProcessRecordAttachments_OperationNo ON dbo.ProcessRecordAttachments(OperationNo);
+    CREATE INDEX IX_ProcessRecordAttachments_DepartmentId ON dbo.ProcessRecordAttachments(DepartmentId);
+    CREATE INDEX IX_ProcessRecordAttachments_AttachedAtUtc ON dbo.ProcessRecordAttachments(AttachedAtUtc);
 END;
 GO

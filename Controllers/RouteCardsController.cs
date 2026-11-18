@@ -33,6 +33,10 @@ public sealed class RouteCardsController(IRouteCardService routeCards, IOpcenter
         {
             return BadRequest(new { error = exception.Message });
         }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
         catch (DbUpdateException exception)
         {
             logger.LogError(exception, "Failed to save route card {PartNo} to the database.", request.Card.PartNo);

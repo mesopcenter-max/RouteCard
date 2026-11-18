@@ -27,6 +27,11 @@
   <nav class="breadcrumb" aria-label="Breadcrumb"><span class="breadcrumb-home" aria-hidden="true">⌂</span><span aria-hidden="true">›</span><span>Route Cards</span><span aria-hidden="true">›</span><strong>New Route Card</strong></nav>
 
   <main class="route-card">
+    <nav class="page-tabs" aria-label="Route card navigation" role="tablist">
+      <button type="button" class="page-tab active" id="route-card-tab" role="tab" aria-controls="route-card-panel" aria-selected="true">Route Card</button>
+      <button type="button" class="page-tab" id="process-records-tab" role="tab" aria-controls="process-records-panel" aria-selected="false">Attached Process Records</button>
+    </nav>
+    <section id="route-card-panel" role="tabpanel" aria-labelledby="route-card-tab">
     <form class="route-form" autocomplete="off">
     <section class="general-info" aria-labelledby="general-info-title">
       <h2 class="section-bar" id="general-info-title">Route Card</h2>
@@ -45,6 +50,21 @@
       @await Html.PartialAsync("_Sheet3")
       <div class="record-actions"><span id="save-route-card-status" role="status" aria-live="polite">Review each section, then save or print.</span><span id="stamp-load-status" role="status" aria-live="polite"></span><button type="submit" class="print-button" id="save-route-card">Save Route Card</button><button type="button" class="print-button" id="print-route-card">Print / Save as PDF <span aria-hidden="true">▣</span></button></div>
     </form>
+    </section>
+    <section id="process-records-panel" class="process-records-panel" role="tabpanel" aria-labelledby="process-records-tab" hidden>
+      <div class="panel-title"><span class="panel-step">PR</span><div><h2 id="process-records-title">Attached Process Records</h2><p>Search, filter, and sort uploaded operation records</p></div></div>
+      <div class="process-records-content">
+        <div class="process-record-filters">
+          <label>Search name or person<input id="process-record-search" type="search" placeholder="File name, person, or route card"></label>
+          <label>Operation no.<input id="process-record-operation-filter" type="search"></label>
+          <label>Dept ID / WCR<input id="process-record-department-filter" type="search"></label>
+          <label>Sort by<select id="process-record-sort"><option value="date">Attached date</option><option value="name">File name</option><option value="operation">Operation no.</option><option value="department">Dept ID / WCR</option><option value="person">Attached by</option></select></label>
+          <button type="button" id="process-record-sort-order" aria-label="Change sort order">Descending</button>
+        </div>
+        <p id="process-record-status" role="status" aria-live="polite"></p>
+        <div class="table-scroll"><table class="entry-table process-records-table"><thead><tr><th>Process record name</th><th>Operation no.</th><th>Dept ID / WCR</th><th>Route card no.</th><th>Attached by</th><th>Attached date</th><th>Actions</th></tr></thead><tbody id="process-records-body"></tbody></table></div>
+      </div>
+    </section>
   </main>
 
   <footer class="app-footer"><span>© @DateTime.Today.Year Hindustan Aeronautics Limited (HAL). All Rights Reserved.</span><span>Foundry &amp; Forge Division <b aria-hidden="true">·</b> Route Card Management</span></footer>

@@ -19,11 +19,30 @@ public sealed class RouteCardService(RouteCardDbContext db) : IRouteCardService
         if (string.IsNullOrWhiteSpace(request.Card.PartNo))
             throw new ArgumentException("PartNo is required.", nameof(request));
 
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         var card = request.Card;
         card.TraceabilityJson = JsonSerializer.Serialize(request.Traceability);
         card.OperationsJson = JsonSerializer.Serialize(request.Operations);
         card.UpdatedUtc = DateTime.UtcNow;
-        db.RouteCards.Add(card);
+        if (card.Id > 0)
+        {
+            var existingCard = await db.RouteCards.SingleOrDefaultAsync(value => value.Id == card.Id, cancellationToken);
+            if (existingCard is null)
+                throw new ArgumentException("The route card to update could not be found.", nameof(request));
+            if (existingCard.CreatedByUserId != userId)
+                throw new UnauthorizedAccessException("Only the user who created this route card can update it.");
+            card.CreatedByUserId = existingCard.CreatedByUserId;
+            card.CreatedUtc = existingCard.CreatedUtc;
+            db.Entry(existingCard).CurrentValues.SetValues(card);
+            card = existingCard;
+            var existingApprovals = await db.RouteCardApprovals.Where(value => value.RouteCardId == card.Id).ToListAsync(cancellationToken);
+            db.RouteCardApprovals.RemoveRange(existingApprovals);
+        }
+        else
+        {
+            card.CreatedByUserId = userId;
+            db.RouteCards.Add(card);
+        }
         await db.SaveChangesAsync(cancellationToken);
 
         foreach (var approvalRequest in request.Approvals)
@@ -47,6 +66,7 @@ public sealed class RouteCardService(RouteCardDbContext db) : IRouteCardService
             });
         }
         await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
         return card;
     }
 
